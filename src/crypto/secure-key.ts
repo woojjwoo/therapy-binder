@@ -25,6 +25,27 @@ import { METADATA_KEYS } from '../db/schema';
 const RAW_KEY_HEX_KEY = 'tb_raw_key_hex';
 const PASSPHRASE_KEY   = 'tb_passphrase';
 
+// In-memory fallback when SecureStore is unavailable (e.g. Expo Go on device)
+const memoryStore = new Map<string, string>();
+
+async function secureSet(key: string, value: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(key, value);
+  } catch {
+    memoryStore.set(key, value);
+  }
+}
+
+async function secureGet(key: string): Promise<string | null> {
+  try {
+    const val = await SecureStore.getItemAsync(key);
+    if (val != null) return val;
+  } catch {
+    // SecureStore unavailable, fall through to memory
+  }
+  return memoryStore.get(key) ?? null;
+}
+
 export type BiometricType = 'faceid' | 'touchid' | 'passcode' | 'none';
 
 // ─── Biometric type detection ─────────────────────────────────────────────────
@@ -54,7 +75,7 @@ export async function generateAndStoreKey(): Promise<{ key: CryptoKey }> {
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 
-  await SecureStore.setItemAsync(RAW_KEY_HEX_KEY, keyHex);
+  await secureSet(RAW_KEY_HEX_KEY, keyHex);
   const key = await importRawKey(randomBytes);
   return { key };
 }
@@ -65,7 +86,7 @@ export async function generateAndStoreKey(): Promise<{ key: CryptoKey }> {
  */
 export async function unlockWithStoredKey(): Promise<CryptoKey | null> {
   try {
-    const keyHex = await SecureStore.getItemAsync(RAW_KEY_HEX_KEY);
+    const keyHex = await secureGet(RAW_KEY_HEX_KEY);
     if (!keyHex) return null;
     const bytes = new Uint8Array(keyHex.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
     return importRawKey(bytes);
@@ -89,7 +110,7 @@ export async function unlockWithBiometrics(prompt: string): Promise<CryptoKey | 
     if (!authResult.success) return null;
 
     // Biometric flow: raw key stored as hex
-    const keyHex = await SecureStore.getItemAsync(RAW_KEY_HEX_KEY);
+    const keyHex = await secureGet(RAW_KEY_HEX_KEY);
     if (keyHex) {
       const bytes = new Uint8Array(
         keyHex.match(/.{2}/g)!.map((b) => parseInt(b, 16))
@@ -98,7 +119,7 @@ export async function unlockWithBiometrics(prompt: string): Promise<CryptoKey | 
     }
 
     // Passphrase flow: passphrase stored, re-derive key
-    const passphrase = await SecureStore.getItemAsync(PASSPHRASE_KEY);
+    const passphrase = await secureGet(PASSPHRASE_KEY);
     const salt = await getMeta(METADATA_KEYS.SALT);
     if (passphrase && salt) {
       const rawKey = await deriveKey(passphrase, salt);
@@ -118,5 +139,5 @@ export async function unlockWithBiometrics(prompt: string): Promise<CryptoKey | 
  * This allows Face ID / passcode re-unlock without re-typing the passphrase.
  */
 export async function storePassphraseSecurely(passphrase: string): Promise<void> {
-  await SecureStore.setItemAsync(PASSPHRASE_KEY, passphrase);
+  await secureSet(PASSPHRASE_KEY, passphrase);
 }
