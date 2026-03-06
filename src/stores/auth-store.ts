@@ -19,6 +19,7 @@ interface AuthState {
   isUnlocked: boolean;
   onboarding: OnboardingData | null;
   onboardingComplete: boolean;
+  metaLoaded: boolean; // true once loadMeta() has resolved
 
   unlock: (key: CryptoKey) => void;
   lock: () => void;
@@ -32,6 +33,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isUnlocked: false,
   onboarding: null,
   onboardingComplete: false,
+  metaLoaded: false,
 
   unlock: (key: CryptoKey) =>
     set({ masterKey: key, isUnlocked: true }),
@@ -64,9 +66,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loadMeta: async () => {
     try {
       const complete = await getMeta('onboarding_complete');
-      set({ onboardingComplete: complete === 'true' });
+      set({ onboardingComplete: complete === 'true', metaLoaded: true });
     } catch {
-      set({ onboardingComplete: false });
+      set({ onboardingComplete: false, metaLoaded: true });
     }
   },
 }));

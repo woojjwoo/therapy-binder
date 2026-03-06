@@ -8,13 +8,14 @@ import * as Sharing from 'expo-sharing';
 // Lazy-required — react-native-html-to-pdf is a native module that
 // crashes Expo Go at register time. Import only when actually calling exportAsPDF.
 // In a dev/prod native build this resolves correctly.
-let _RNHTMLtoPDF: typeof import('react-native-html-to-pdf').default | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _RNHTMLtoPDF: any = null;
 function getRNHTMLtoPDF() {
   if (!_RNHTMLtoPDF) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    _RNHTMLtoPDF = require('react-native-html-to-pdf').default;
+    _RNHTMLtoPDF = require('react-native-html-to-pdf').default ?? require('react-native-html-to-pdf');
   }
-  return _RNHTMLtoPDF!;
+  return _RNHTMLtoPDF;
 }
 import { listSessions, decryptSession } from './local';
 import type { CryptoKey } from '../crypto/aes-gcm';
