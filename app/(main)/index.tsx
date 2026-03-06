@@ -116,10 +116,10 @@ export default function TimelineScreen() {
           </View>
         ) : (
           <EmptyState
-            icon="📓"
-            title="No sessions yet"
-            message="Capture your first therapy session to start building your binder."
-            actionLabel="+ New Session"
+            icon={'\uD83D\uDCD4'}
+            title="Your therapy journey starts here"
+            message="Log your first session after therapy to start tracking your progress and patterns."
+            actionLabel="Log Your First Session"
             onAction={() => router.push('/new-session')}
           />
         )

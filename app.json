@@ -13,8 +13,14 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.therapybinder.app",
+      "buildNumber": "1",
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Therapy Binder uses Face ID to protect access to your private sessions."
+        "NSFaceIDUsageDescription": "Therapy Binder uses Face ID to protect access to your private sessions.",
+        "NSMicrophoneUsageDescription": "Therapy Binder uses your microphone to record voice notes for your private sessions.",
+        "NSPhotoLibraryUsageDescription": "Therapy Binder accesses your photo library to attach images to your private sessions.",
+        "NSPhotoLibraryAddUsageDescription": "Therapy Binder saves images to your photo library.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -24,7 +30,9 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.therapybinder.app",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -26,6 +26,19 @@ import { VoicePlayer } from '../../../src/components/blocks/VoicePlayer';
 import { Card } from '../../../src/components/ui/Card';
 import type { Block } from '../../../src/models/block';
 
+const MOOD_EMOJI_MAP: Record<number, string> = {
+  1: '\uD83D\uDE1E',
+  2: '\uD83D\uDE15',
+  3: '\uD83D\uDE10',
+  4: '\uD83D\uDE42',
+  5: '\uD83D\uDE04',
+};
+
+function scoreToEmoji(score: number): string {
+  const mapped = Math.max(1, Math.min(5, Math.round(score / 2)));
+  return MOOD_EMOJI_MAP[mapped] ?? '\uD83D\uDE10';
+}
+
 export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const masterKey = useAuthStore((s) => s.masterKey);
@@ -85,6 +98,7 @@ export default function SessionDetailScreen() {
           <Text style={styles.back}>{'\u2039'} Back</Text>
         </TouchableOpacity>
         <View style={styles.moodRow}>
+          <Text style={styles.moodEmoji}>{scoreToEmoji(session.moodScore)}</Text>
           <View style={[styles.moodDot, { backgroundColor: color }]} />
           <Text style={styles.moodLabel}>{session.moodScore}/10</Text>
           <Text style={styles.date}>{date}</Text>
@@ -196,6 +210,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  moodEmoji: {
+    fontSize: 24,
   },
   moodDot: {
     width: 12,

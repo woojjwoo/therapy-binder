@@ -1,20 +1,22 @@
 /**
  * Patterns Screen
+ * - Mood trend: last 7 session emojis
  * - Emotional river bar chart (mood over time, colored by score)
  * - Tag cluster cards (session count + avg mood per theme)
  * - Last 10 insight sentences as quotable lines
- * - Uses session store for decrypted data
+ * - Pro-gated: free users see locked state
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ScrollView,
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import Svg, { Rect, Text as SvgText, Line } from 'react-native-svg';
 
 import { Colors, moodColor } from '../../src/theme/colors';
@@ -22,7 +24,21 @@ import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
 import { listSessions, decryptSession } from '../../src/storage/local';
 import { EmptyState } from '../../src/components/ui/EmptyState';
+import { useEntitlement } from '../../src/hooks/useEntitlement';
 import type { Block } from '../../src/models/block';
+
+const MOOD_EMOJI_MAP: Record<number, string> = {
+  1: '\uD83D\uDE1E',
+  2: '\uD83D\uDE15',
+  3: '\uD83D\uDE10',
+  4: '\uD83D\uDE42',
+  5: '\uD83D\uDE04',
+};
+
+function scoreToEmoji(score: number): string {
+  const mapped = Math.max(1, Math.min(5, Math.round(score / 2)));
+  return MOOD_EMOJI_MAP[mapped] ?? '\uD83D\uDE10';
+}
 
 interface SessionData {
   id: string;
@@ -30,6 +46,24 @@ interface SessionData {
   createdAt: string;
   insight: string;
   tags: string[];
+}
+
+// ─── Mood Trend ──────────────────────────────────────────────────────────────
+
+function MoodTrend({ sessions }: { sessions: SessionData[] }) {
+  const recent = sessions.slice(0, 7);
+  if (recent.length === 0) return null;
+
+  return (
+    <View style={styles.trendCard}>
+      <Text style={styles.trendTitle}>Your recent mood</Text>
+      <View style={styles.trendRow}>
+        {recent.map((s) => (
+          <Text key={s.id} style={styles.trendEmoji}>{scoreToEmoji(s.moodScore)}</Text>
+        ))}
+      </View>
+    </View>
+  );
 }
 
 // ─── Emotional River Chart ────────────────────────────────────────────────────
@@ -180,6 +214,7 @@ function InsightQuotes({ sessions }: { sessions: SessionData[] }) {
 
 export default function PatternsScreen() {
   const masterKey = useAuthStore((s) => s.masterKey);
+  const { isPro } = useEntitlement();
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -230,7 +265,21 @@ export default function PatternsScreen() {
         <Text style={styles.subtitle}>Your emotional landscape over time</Text>
       </View>
 
-      {sessions.length === 0 ? (
+      {!isPro ? (
+        <View style={styles.lockedContainer}>
+          <Text style={styles.lockedIcon}>{'\uD83D\uDD12'}</Text>
+          <Text style={styles.lockedTitle}>Patterns is a Pro feature</Text>
+          <Text style={styles.lockedMessage}>
+            Upgrade to see mood trends, tag themes, and insights across your sessions.
+          </Text>
+          <TouchableOpacity
+            style={styles.upgradeBtn}
+            onPress={() => router.push('/paywall')}
+          >
+            <Text style={styles.upgradeBtnText}>Upgrade to Pro</Text>
+          </TouchableOpacity>
+        </View>
+      ) : sessions.length === 0 ? (
         <View style={styles.emptyContainer}>
           <EmptyState
             icon={'\uD83C\uDF31'}
@@ -240,6 +289,7 @@ export default function PatternsScreen() {
         </View>
       ) : (
         <>
+          <MoodTrend sessions={sessions} />
           <EmotionalRiver sessions={sessions} />
           <TagClusters sessions={sessions} />
           <InsightQuotes sessions={sessions} />
@@ -268,6 +318,69 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.barkBrown,
     marginTop: 4,
+  },
+
+  // Locked state
+  lockedContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 60,
+    gap: 12,
+  },
+  lockedIcon: { fontSize: 48 },
+  lockedTitle: {
+    fontFamily: Fonts.serifBold,
+    fontSize: FontSizes.xl,
+    color: Colors.earthBrown,
+    textAlign: 'center',
+  },
+  lockedMessage: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.md,
+    color: Colors.barkBrown,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  upgradeBtn: {
+    backgroundColor: Colors.earthBrown,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 30,
+    marginTop: 8,
+  },
+  upgradeBtnText: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.md,
+    color: Colors.white,
+  },
+
+  // Mood trend
+  trendCard: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: Colors.earthBrown,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  trendTitle: {
+    fontFamily: Fonts.serifBold,
+    fontSize: FontSizes.lg,
+    color: Colors.earthBrown,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  trendRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  trendEmoji: {
+    fontSize: 28,
   },
 
   chartCard: {

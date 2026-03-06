@@ -1,37 +1,15 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
-import { useAuthStore } from '../../src/stores/auth-store';
-import { generateAndStoreKey, unlockWithStoredKey } from '../../src/crypto/secure-key';
-import { setMeta } from '../../src/db';
 
 const PROPS = [
-  { icon: '🔒', text: 'Your notes stay on your device' },
-  { icon: '🎙️', text: 'Voice, notes, and insights in one place' },
-  { icon: '📈', text: 'Find patterns across your therapy journey' },
+  { icon: '\uD83D\uDD12', text: 'Your notes stay on your device' },
+  { icon: '\uD83C\uDFA4', text: 'Voice, notes, and insights in one place' },
+  { icon: '\uD83D\uDCC8', text: 'Find patterns across your therapy journey' },
 ];
 
 export default function WelcomeScreen() {
-  const [loading, setLoading] = useState(false);
-  const { unlock, completeOnboarding } = useAuthStore();
-
-  async function handleGetStarted() {
-    setLoading(true);
-    try {
-      const { key } = await generateAndStoreKey();
-      unlock(key);
-      await setMeta('onboarding_complete', 'true');
-      await completeOnboarding('');
-      router.replace('/(main)/');
-    } catch (e) {
-      console.error('Setup failed', e);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <SafeAreaView style={s.safe}>
       <View style={s.container}>
@@ -51,11 +29,11 @@ export default function WelcomeScreen() {
           ))}
         </View>
 
-        <Pressable style={[s.btn, loading && s.btnDisabled]} onPress={handleGetStarted} disabled={loading}>
-          {loading
-            ? <ActivityIndicator color={Colors.white} />
-            : <Text style={s.btnText}>Get Started</Text>
-          }
+        <Pressable
+          style={s.btn}
+          onPress={() => router.push('/(auth)/create-passphrase')}
+        >
+          <Text style={s.btnText}>Get Started</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -74,5 +52,4 @@ const s = StyleSheet.create({
   propText: { flex: 1, fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.earthBrown, lineHeight: 24 },
   btn: { backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 14, alignItems: 'center' },
   btnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
-  btnDisabled: { opacity: 0.6 },
 });

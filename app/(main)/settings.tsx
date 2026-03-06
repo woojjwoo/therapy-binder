@@ -1,13 +1,15 @@
 /**
- * Settings Screen — fully wired for Week 3.
+ * Settings Screen
+ * - Subscription status / paywall link
  * - Change passphrase (with full re-encryption)
+ * - Daily reminders toggle + time picker
  * - Export as JSON
- * - Generate Transition Report PDF (client-side only)
+ * - Generate Transition Report PDF (Pro-gated)
  * - Double-confirmed full data deletion
  * - Lock app
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,11 +19,18 @@ import {
   Modal,
   ScrollView,
   ActivityIndicator,
+  Switch,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
 import { useSessionStore } from '../../src/stores/session-store';
+import { useSubscription } from '../../src/stores/subscription-store';
+import { useEntitlement } from '../../src/hooks/useEntitlement';
 import { exportAsJSON, exportAsPDF } from '../../src/storage/export';
 import { deriveKey } from '../../src/crypto/kdf';
 import { importRawKey } from '../../src/crypto/aes-gcm';
@@ -29,6 +38,14 @@ import { reEncryptAllSessions } from '../../src/crypto/reencrypt-all';
 import { getMeta, setMeta } from '../../src/db';
 import { METADATA_KEYS } from '../../src/db/schema';
 import { PassphraseInput } from '../../src/components/onboarding/PassphraseInput';
+import {
+  requestPermission,
+  scheduleDaily,
+  cancelReminders,
+} from '../../src/hooks/useNotifications';
+
+const REMINDER_ENABLED_KEY = 'tb_reminder_enabled';
+const REMINDER_TIME_KEY = 'tb_reminder_time';
 
 // ─── Change Passphrase Modal ──────────────────────────────────────────────────
 
@@ -60,18 +77,15 @@ function ChangePassphraseModal({
 
     setWorking(true);
     try {
-      // Verify current passphrase by re-deriving and attempting decrypt
       const salt = await getMeta(METADATA_KEYS.SALT);
       if (!salt) throw new Error('No salt found');
 
       const currentRaw = await deriveKey(current, salt);
       const currentKey = await importRawKey(currentRaw);
 
-      // Generate new key from new passphrase
       const newRaw = await deriveKey(next, salt);
       const newKey = await importRawKey(newRaw);
 
-      // Re-encrypt all sessions
       const result = await reEncryptAllSessions(currentKey, newKey);
 
       if (result.skipped > 0) {
@@ -81,9 +95,7 @@ function ChangePassphraseModal({
         );
       }
 
-      // Update in-memory key
       unlock(newKey);
-
       onClose();
       Alert.alert('Done', 'Passphrase changed. All sessions re-encrypted.');
     } catch (err) {
@@ -137,7 +149,7 @@ function ChangePassphraseModal({
           {working ? (
             <ActivityIndicator color={Colors.white} />
           ) : (
-            <Text style={styles.primaryBtnText}>🔐 Change Passphrase</Text>
+            <Text style={styles.primaryBtnText}>Change Passphrase</Text>
           )}
         </TouchableOpacity>
 
@@ -155,8 +167,54 @@ export default function SettingsScreen() {
   const lock = useAuthStore((s) => s.lock);
   const masterKey = useAuthStore((s) => s.masterKey);
   const removeAll = useSessionStore((s) => s.removeAll);
+  const { isPro, canExportPDF } = useEntitlement();
   const [showChangePass, setShowChangePass] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  // Reminders state
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderTime, setReminderTime] = useState(new Date(2000, 0, 1, 20, 0)); // default 8pm
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const enabled = await AsyncStorage.getItem(REMINDER_ENABLED_KEY);
+      const time = await AsyncStorage.getItem(REMINDER_TIME_KEY);
+      if (enabled === 'true') setReminderEnabled(true);
+      if (time) {
+        const [h, m] = time.split(':').map(Number);
+        setReminderTime(new Date(2000, 0, 1, h, m));
+      }
+    })();
+  }, []);
+
+  const handleToggleReminder = async (value: boolean) => {
+    if (value) {
+      const granted = await requestPermission();
+      if (!granted) {
+        Alert.alert('Permission needed', 'Enable notifications in Settings to use reminders.');
+        return;
+      }
+      await scheduleDaily(reminderTime.getHours(), reminderTime.getMinutes());
+      await AsyncStorage.setItem(REMINDER_ENABLED_KEY, 'true');
+      await AsyncStorage.setItem(REMINDER_TIME_KEY, `${reminderTime.getHours()}:${reminderTime.getMinutes()}`);
+      setReminderEnabled(true);
+    } else {
+      await cancelReminders();
+      await AsyncStorage.setItem(REMINDER_ENABLED_KEY, 'false');
+      setReminderEnabled(false);
+    }
+  };
+
+  const handleTimeChange = async (_: unknown, date?: Date) => {
+    setShowTimePicker(Platform.OS === 'ios');
+    if (!date) return;
+    setReminderTime(date);
+    if (reminderEnabled) {
+      await scheduleDaily(date.getHours(), date.getMinutes());
+      await AsyncStorage.setItem(REMINDER_TIME_KEY, `${date.getHours()}:${date.getMinutes()}`);
+    }
+  };
 
   const handleExportJSON = async () => {
     if (!masterKey) return;
@@ -172,6 +230,10 @@ export default function SettingsScreen() {
 
   const handleExportPDF = async () => {
     if (!masterKey) return;
+    if (!canExportPDF) {
+      router.push('/paywall');
+      return;
+    }
     setExporting(true);
     try {
       await exportAsPDF(masterKey);
@@ -213,11 +275,27 @@ export default function SettingsScreen() {
     );
   };
 
+  const timeLabel = reminderTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Settings</Text>
+        </View>
+
+        {/* Subscription */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>SUBSCRIPTION</Text>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => router.push('/paywall')}
+          >
+            <Text style={styles.rowLabel}>
+              {isPro ? 'Pro \u2014 Active \u2713' : 'Subscription'}
+            </Text>
+            <Text style={styles.chevron}>{'\u203A'}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Security */}
@@ -228,12 +306,43 @@ export default function SettingsScreen() {
               <Text style={styles.rowLabel}>Change Passphrase</Text>
               <Text style={styles.rowSub}>Re-encrypts all sessions</Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={styles.chevron}>{'\u203A'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.row} onPress={lock}>
             <Text style={styles.rowLabel}>Lock App</Text>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={styles.chevron}>{'\u203A'}</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Reminders */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>REMINDERS</Text>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>Daily reminder</Text>
+            <Switch
+              value={reminderEnabled}
+              onValueChange={handleToggleReminder}
+              trackColor={{ true: Colors.sage }}
+              thumbColor={Colors.white}
+            />
+          </View>
+          {reminderEnabled && (
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => setShowTimePicker(true)}
+            >
+              <Text style={styles.rowLabel}>Reminder time</Text>
+              <Text style={styles.rowSub}>{timeLabel}</Text>
+            </TouchableOpacity>
+          )}
+          {showTimePicker && (
+            <DateTimePicker
+              value={reminderTime}
+              mode="time"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleTimeChange}
+            />
+          )}
         </View>
 
         {/* Data */}
@@ -251,7 +360,7 @@ export default function SettingsScreen() {
             {exporting ? (
               <ActivityIndicator color={Colors.earthBrown} />
             ) : (
-              <Text style={styles.chevron}>›</Text>
+              <Text style={styles.chevron}>{'\u203A'}</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity
@@ -260,13 +369,15 @@ export default function SettingsScreen() {
             disabled={exporting}
           >
             <View>
-              <Text style={styles.rowLabel}>Transition Report (PDF)</Text>
-              <Text style={styles.rowSub}>Generated on-device · never sent to server</Text>
+              <Text style={styles.rowLabel}>
+                Transition Report (PDF){!canExportPDF ? ' \uD83D\uDD12' : ''}
+              </Text>
+              <Text style={styles.rowSub}>Generated on-device {'\u00B7'} never sent to server</Text>
             </View>
             {exporting ? (
               <ActivityIndicator color={Colors.earthBrown} />
             ) : (
-              <Text style={styles.chevron}>›</Text>
+              <Text style={styles.chevron}>{'\u203A'}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -280,7 +391,7 @@ export default function SettingsScreen() {
         </View>
 
         <Text style={styles.trustNote}>
-          Your data is yours — always. You can export everything regardless of subscription status.
+          Your data is yours {'\u2014'} always. You can export everything regardless of subscription status.
         </Text>
       </ScrollView>
 

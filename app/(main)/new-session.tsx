@@ -5,12 +5,12 @@
  *   - Large serif insight input (top)
  *   - Add-block buttons row
  *   - Draggable block cards
- *   - Mood slider
+ *   - Mood emoji selector (1-5)
  *   - Tag chips
  *   - Save button (encrypts text content via saveEncryptedSession)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,23 +32,39 @@ import { VoiceRecorderModal } from '../../src/components/blocks/VoiceRecorderMod
 import { InsightInput } from '../../src/components/blocks/InsightInput';
 import { AddBlockBar } from '../../src/components/blocks/AddBlockBar';
 import { BlockCard } from '../../src/components/blocks/BlockCard';
-import { MoodSlider } from '../../src/components/blocks/MoodSlider';
 import { TagChips } from '../../src/components/blocks/TagChips';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 
 import { useAuthStore } from '../../src/stores/auth-store';
 import { useSessionStore } from '../../src/stores/session-store';
+import { useEntitlement } from '../../src/hooks/useEntitlement';
 import type { Block, BlockType, VoiceBlock, ImageBlock } from '../../src/models/block';
 import type { SessionEntry } from '../../src/models/session';
+
+const MOOD_EMOJIS = [
+  { score: 1, emoji: '\uD83D\uDE1E', label: 'Rough' },
+  { score: 2, emoji: '\uD83D\uDE15', label: 'Low' },
+  { score: 3, emoji: '\uD83D\uDE10', label: 'Okay' },
+  { score: 4, emoji: '\uD83D\uDE42', label: 'Good' },
+  { score: 5, emoji: '\uD83D\uDE04', label: 'Great' },
+] as const;
 
 export default function NewSessionScreen() {
   const masterKey = useAuthStore((s) => s.masterKey);
   const { saveSession } = useSessionStore();
+  const { canAddSession } = useEntitlement();
+
+  // Redirect to paywall if free limit reached
+  useEffect(() => {
+    if (!canAddSession) {
+      router.replace('/paywall');
+    }
+  }, [canAddSession]);
 
   const [insight, setInsight] = useState('');
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [moodScore, setMoodScore] = useState(5);
+  const [moodScore, setMoodScore] = useState<number | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
@@ -114,6 +130,10 @@ export default function NewSessionScreen() {
       Alert.alert('Missing insight', 'Add your one-sentence insight before saving.');
       return;
     }
+    if (moodScore === null) {
+      Alert.alert('Missing mood', 'Select how you feel before saving.');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -167,6 +187,8 @@ export default function NewSessionScreen() {
     setShowVoiceRecorder(false);
   }, []);
 
+  const selectedMood = MOOD_EMOJIS.find((m) => m.score === moodScore);
+
   return (
     <GestureHandlerRootView style={styles.root}>
       <VoiceRecorderModal
@@ -207,7 +229,29 @@ export default function NewSessionScreen() {
           contentContainerStyle={styles.listContent}
           ListFooterComponent={
             <View>
-              <MoodSlider value={moodScore} onChange={setMoodScore} />
+              {/* Mood emoji selector */}
+              <View style={styles.moodSection}>
+                <Text style={styles.moodTitle}>How do you feel?</Text>
+                <View style={styles.moodRow}>
+                  {MOOD_EMOJIS.map((m) => (
+                    <TouchableOpacity
+                      key={m.score}
+                      style={[
+                        styles.moodBtn,
+                        moodScore === m.score && styles.moodBtnSelected,
+                      ]}
+                      onPress={() => setMoodScore(m.score)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.moodEmoji}>{m.emoji}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {selectedMood && (
+                  <Text style={styles.moodLabel}>{selectedMood.label}</Text>
+                )}
+              </View>
+
               <TagChips selected={tags} onChange={setTags} />
               <View style={styles.saveFooter}>
                 <TouchableOpacity
@@ -268,6 +312,47 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 40,
   },
+
+  // Mood selector
+  moodSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  moodTitle: {
+    fontFamily: Fonts.serifBold,
+    fontSize: FontSizes.lg,
+    color: Colors.earthBrown,
+    marginBottom: 12,
+  },
+  moodRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  moodBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+    borderWidth: 2,
+    borderColor: Colors.border,
+  },
+  moodBtnSelected: {
+    backgroundColor: Colors.earthBrown + '15',
+    borderColor: Colors.earthBrown,
+  },
+  moodEmoji: {
+    fontSize: 26,
+  },
+  moodLabel: {
+    fontFamily: Fonts.sansMedium,
+    fontSize: FontSizes.sm,
+    color: Colors.barkBrown,
+    marginTop: 8,
+  },
+
   saveFooter: {
     paddingHorizontal: 20,
     paddingTop: 20,

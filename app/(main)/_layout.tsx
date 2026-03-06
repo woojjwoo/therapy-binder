@@ -1,9 +1,12 @@
 import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import { Colors } from '../../src/theme/colors';
 import { Fonts } from '../../src/theme/typography';
 
 export default function MainLayout() {
+  usePreventScreenCapture();
+
   return (
     <Tabs
       screenOptions={{
@@ -47,6 +50,10 @@ export default function MainLayout() {
       />
       <Tabs.Screen
         name="session/[id]"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="paywall"
         options={{ href: null }}
       />
     </Tabs>
