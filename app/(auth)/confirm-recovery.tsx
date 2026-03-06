@@ -35,7 +35,7 @@ export default function ConfirmRecoveryScreen() {
       return;
     }
     await completeOnboarding(saltHex);
-    router.replace('/(main)/new-session');
+    router.replace('/(main)/');
   }
 
   return (

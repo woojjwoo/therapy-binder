@@ -1,4 +1,4 @@
-import { importRawKey } from './aes-gcm';
+import { importRawKey, type CryptoKey } from './aes-gcm';
 
 let _masterKey: CryptoKey | null = null;
 

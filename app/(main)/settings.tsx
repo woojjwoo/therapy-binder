@@ -21,7 +21,7 @@ import {
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
-import { deleteAllSessions } from '../../src/storage/local';
+import { useSessionStore } from '../../src/stores/session-store';
 import { exportAsJSON, exportAsPDF } from '../../src/storage/export';
 import { deriveKey } from '../../src/crypto/kdf';
 import { importRawKey } from '../../src/crypto/aes-gcm';
@@ -154,6 +154,7 @@ function ChangePassphraseModal({
 export default function SettingsScreen() {
   const lock = useAuthStore((s) => s.lock);
   const masterKey = useAuthStore((s) => s.masterKey);
+  const removeAll = useSessionStore((s) => s.removeAll);
   const [showChangePass, setShowChangePass] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -200,7 +201,7 @@ export default function SettingsScreen() {
                   text: 'Yes, delete all',
                   style: 'destructive',
                   onPress: async () => {
-                    await deleteAllSessions();
+                    await removeAll();
                     lock();
                   },
                 },

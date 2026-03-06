@@ -16,8 +16,8 @@ function getRNHTMLtoPDF() {
   }
   return _RNHTMLtoPDF!;
 }
-import { listSessions } from './local';
-import { decrypt } from '../crypto/aes-gcm';
+import { listSessions, decryptSession } from './local';
+import type { CryptoKey } from '../crypto/aes-gcm';
 import { moodColor } from '../theme/colors';
 import type { Block } from '../models/block';
 
@@ -36,18 +36,14 @@ async function decryptAll(masterKey: CryptoKey): Promise<ExportSession[]> {
   const results: ExportSession[] = [];
 
   for (const row of rows) {
-    const plain = await decrypt(
-      { ciphertext: row.ciphertext, iv: row.iv, version: row.schema_ver },
-      masterKey
-    );
-    if (!plain) continue;
-    const data = JSON.parse(plain);
+    const session = await decryptSession(row, masterKey);
+    if (!session) continue;
     results.push({
-      id: row.id,
-      moodScore: row.mood_score,
-      createdAt: row.created_at,
-      blocks: data.blocks ?? [],
-      tags: data.tags ?? [],
+      id: session.id,
+      moodScore: session.moodScore,
+      createdAt: session.createdAt,
+      blocks: session.blocks,
+      tags: session.tags,
     });
   }
 

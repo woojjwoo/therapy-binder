@@ -1,3 +1,4 @@
+import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Fonts } from '../../src/theme/typography';
@@ -21,19 +22,32 @@ export default function MainLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Sessions', tabBarIcon: () => null }}
+        options={{
+          title: 'Sessions',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📓</Text>,
+        }}
       />
       <Tabs.Screen
         name="patterns"
-        options={{ title: 'Patterns', tabBarIcon: () => null }}
+        options={{
+          title: 'Patterns',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📈</Text>,
+        }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: 'Settings', tabBarIcon: () => null }}
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⚙️</Text>,
+        }}
       />
       <Tabs.Screen
         name="new-session"
-        options={{ href: null }}  // hidden from tab bar, pushed modally
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="session/[id]"
+        options={{ href: null }}
       />
     </Tabs>
   );

@@ -1,6 +1,6 @@
 /**
  * Timeline Screen — chronological feed of session cards.
- * Searches only decrypted local data.
+ * Uses the session store for decrypted data management.
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -11,70 +11,27 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  ListRenderItem,
+  ActivityIndicator,
+  type ListRenderItem,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 
 import { Colors, moodColor } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
-import { listSessions } from '../../src/storage/local';
-import { decrypt } from '../../src/crypto/aes-gcm';
-import type { StoredSession } from '../../src/storage/local';
-import type { Block } from '../../src/models/block';
-
-interface DecryptedCard {
-  id: string;
-  moodScore: number;
-  createdAt: string;
-  insight: string;
-  blockTypes: string[];
-  tags: string[];
-}
+import { useSessionStore, type SessionCard } from '../../src/stores/session-store';
+import { EmptyState } from '../../src/components/ui/EmptyState';
 
 export default function TimelineScreen() {
   const masterKey = useAuthStore((s) => s.masterKey);
-  const [cards, setCards] = useState<DecryptedCard[]>([]);
+  const { cards, loading, loadTimeline } = useSessionStore();
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(true);
 
-  const loadSessions = useCallback(async () => {
-    if (!masterKey) return;
-    setLoading(true);
-    try {
-      const rows = await listSessions();
-      const decrypted = await Promise.all(
-        rows.map(async (row): Promise<DecryptedCard | null> => {
-          const plaintext = await decrypt(
-            { ciphertext: row.ciphertext, iv: row.iv, version: row.schema_ver },
-            masterKey
-          );
-          if (!plaintext) return null;
-          const data = JSON.parse(plaintext);
-          const blocks: Block[] = data.blocks ?? [];
-          const insightBlock = blocks.find((b) => b.type === 'insight');
-          return {
-            id: row.id,
-            moodScore: row.mood_score,
-            createdAt: row.created_at,
-            insight:
-              insightBlock && 'content' in insightBlock
-                ? insightBlock.content
-                : '(no insight)',
-            blockTypes: [...new Set(blocks.map((b) => b.type).filter((t) => t !== 'insight'))],
-            tags: data.tags ?? [],
-          };
-        })
-      );
-      setCards(decrypted.filter((c): c is DecryptedCard => c !== null));
-    } finally {
-      setLoading(false);
-    }
-  }, [masterKey]);
-
-  useEffect(() => {
-    loadSessions();
-  }, [loadSessions]);
+  useFocusEffect(
+    useCallback(() => {
+      if (masterKey) loadTimeline(masterKey);
+    }, [masterKey])
+  );
 
   const filtered = query.trim()
     ? cards.filter(
@@ -84,7 +41,7 @@ export default function TimelineScreen() {
       )
     : cards;
 
-  const renderCard: ListRenderItem<DecryptedCard> = ({ item }) => {
+  const renderCard: ListRenderItem<SessionCard> = ({ item }) => {
     const color = moodColor(item.moodScore);
     const date = new Date(item.createdAt).toLocaleDateString('en-US', {
       month: 'short',
@@ -97,16 +54,13 @@ export default function TimelineScreen() {
         onPress={() => router.push(`/session/${item.id}`)}
         activeOpacity={0.8}
       >
-        {/* Mood stripe */}
         <View style={[styles.moodStripe, { backgroundColor: color }]} />
-
         <View style={styles.cardContent}>
           <Text style={styles.date}>{date}</Text>
           <Text style={styles.insight} numberOfLines={2}>
             {item.insight}
           </Text>
 
-          {/* Block type chips */}
           {item.blockTypes.length > 0 && (
             <View style={styles.chipRow}>
               {item.blockTypes.map((t) => (
@@ -117,7 +71,6 @@ export default function TimelineScreen() {
             </View>
           )}
 
-          {/* Tags */}
           {item.tags.length > 0 && (
             <Text style={styles.tags}>{item.tags.map((t) => `#${t}`).join(' ')}</Text>
           )}
@@ -154,14 +107,22 @@ export default function TimelineScreen() {
       {/* List */}
       {loading ? (
         <View style={styles.center}>
-          <Text style={styles.emptyText}>Loading...</Text>
+          <ActivityIndicator color={Colors.earthBrown} />
         </View>
       ) : filtered.length === 0 ? (
-        <View style={styles.center}>
-          <Text style={styles.emptyText}>
-            {query ? 'No matching sessions.' : 'No sessions yet.\nTap + New to start.'}
-          </Text>
-        </View>
+        query ? (
+          <View style={styles.center}>
+            <Text style={styles.emptyText}>No matching sessions.</Text>
+          </View>
+        ) : (
+          <EmptyState
+            icon="📓"
+            title="No sessions yet"
+            message="Capture your first therapy session to start building your binder."
+            actionLabel="+ New Session"
+            onAction={() => router.push('/new-session')}
+          />
+        )
       ) : (
         <FlatList
           data={filtered}

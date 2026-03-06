@@ -3,6 +3,7 @@
  * - Emotional river bar chart (mood over time, colored by score)
  * - Tag cluster cards (session count + avg mood per theme)
  * - Last 10 insight sentences as quotable lines
+ * - Uses session store for decrypted data
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -13,13 +14,14 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import Svg, { Rect, Text as SvgText, Line } from 'react-native-svg';
 
 import { Colors, moodColor } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
-import { listSessions } from '../../src/storage/local';
-import { decrypt } from '../../src/crypto/aes-gcm';
+import { listSessions, decryptSession } from '../../src/storage/local';
+import { EmptyState } from '../../src/components/ui/EmptyState';
 import type { Block } from '../../src/models/block';
 
 interface SessionData {
@@ -33,7 +35,7 @@ interface SessionData {
 // ─── Emotional River Chart ────────────────────────────────────────────────────
 
 function EmotionalRiver({ sessions }: { sessions: SessionData[] }) {
-  const recent = sessions.slice(0, 30).reverse(); // oldest → newest
+  const recent = sessions.slice(0, 30).reverse();
   if (recent.length === 0) return null;
 
   const W = 340;
@@ -46,9 +48,7 @@ function EmotionalRiver({ sessions }: { sessions: SessionData[] }) {
       <Text style={styles.chartTitle}>Emotional River</Text>
       <Text style={styles.chartSub}>Last {recent.length} sessions</Text>
       <Svg width={W} height={H + 30} viewBox={`0 0 ${W} ${H + 30}`}>
-        {/* Baseline */}
         <Line x1="0" y1={H} x2={W} y2={H} stroke={Colors.border} strokeWidth="1" />
-
         {recent.map((s, i) => {
           const barH = Math.max(8, (s.moodScore / 10) * H);
           const x = 8 + i * (barW + gap);
@@ -86,13 +86,12 @@ function EmotionalRiver({ sessions }: { sessions: SessionData[] }) {
         })}
       </Svg>
 
-      {/* Legend */}
       <View style={styles.legend}>
         {[
-          { color: Colors.terracotta, label: 'Low (1–3)' },
-          { color: Colors.blush, label: 'Difficult (4–5)' },
-          { color: Colors.sageLight, label: 'Good (6–7)' },
-          { color: Colors.sage, label: 'Thriving (8–10)' },
+          { color: Colors.terracotta, label: 'Low (1\u20133)' },
+          { color: Colors.blush, label: 'Difficult (4\u20135)' },
+          { color: Colors.sageLight, label: 'Good (6\u20137)' },
+          { color: Colors.sage, label: 'Thriving (8\u201310)' },
         ].map(({ color, label }) => (
           <View key={label} style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -169,7 +168,7 @@ function InsightQuotes({ sessions }: { sessions: SessionData[] }) {
       <Text style={styles.sectionTitle}>Recent Insights</Text>
       {insights.map((insight, i) => (
         <View key={i} style={styles.quoteCard}>
-          <Text style={styles.quoteMarker}>"</Text>
+          <Text style={styles.quoteMarker}>{'\u201C'}</Text>
           <Text style={styles.quoteText}>{insight}</Text>
         </View>
       ))}
@@ -191,21 +190,16 @@ export default function PatternsScreen() {
       const rows = await listSessions();
       const decrypted = await Promise.all(
         rows.map(async (row) => {
-          const plain = await decrypt(
-            { ciphertext: row.ciphertext, iv: row.iv, version: row.schema_ver },
-            masterKey
-          );
-          if (!plain) return null;
-          const data = JSON.parse(plain);
-          const blocks: Block[] = data.blocks ?? [];
-          const insightBlock = blocks.find((b) => b.type === 'insight');
+          const result = await decryptSession(row, masterKey);
+          if (!result) return null;
+          const insightBlock = result.blocks.find((b) => b.type === 'insight');
           return {
-            id: row.id,
-            moodScore: row.mood_score,
-            createdAt: row.created_at,
+            id: result.id,
+            moodScore: result.moodScore,
+            createdAt: result.createdAt,
             insight:
               insightBlock && 'content' in insightBlock ? insightBlock.content : '',
-            tags: data.tags ?? [],
+            tags: result.tags,
           } satisfies SessionData;
         })
       );
@@ -215,9 +209,11 @@ export default function PatternsScreen() {
     }
   }, [masterKey]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   if (loading) {
     return (
@@ -235,11 +231,12 @@ export default function PatternsScreen() {
       </View>
 
       {sessions.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>🌱</Text>
-          <Text style={styles.emptyText}>
-            Save a few sessions to start seeing patterns here.
-          </Text>
+        <View style={styles.emptyContainer}>
+          <EmptyState
+            icon={'\uD83C\uDF31'}
+            title="No patterns yet"
+            message="Save a few sessions to start seeing patterns here."
+          />
         </View>
       ) : (
         <>
@@ -255,7 +252,7 @@ export default function PatternsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.cream },
   content: { paddingBottom: 60 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.cream },
   header: {
     paddingHorizontal: 20,
     paddingTop: 60,
@@ -273,7 +270,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Chart
   chartCard: {
     marginHorizontal: 16,
     marginBottom: 20,
@@ -315,7 +311,6 @@ const styles = StyleSheet.create({
     color: Colors.barkBrown,
   },
 
-  // Sections
   section: { marginHorizontal: 16, marginBottom: 20 },
   sectionTitle: {
     fontFamily: Fonts.serifBold,
@@ -324,7 +319,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // Tag clusters
   clusterGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -367,7 +361,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
 
-  // Quotes
   quoteCard: {
     backgroundColor: Colors.white,
     borderRadius: 12,
@@ -397,21 +390,8 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  // Empty
-  empty: {
-    margin: 20,
-    padding: 40,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    alignItems: 'center',
-    gap: 16,
-  },
-  emptyIcon: { fontSize: 48 },
-  emptyText: {
-    fontFamily: Fonts.sans,
-    fontSize: FontSizes.md,
-    color: Colors.barkBrown,
-    textAlign: 'center',
-    lineHeight: 22,
+  emptyContainer: {
+    flex: 1,
+    marginTop: 40,
   },
 });

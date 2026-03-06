@@ -6,7 +6,7 @@
 
 import { getDb } from '../db';
 import { decrypt, encrypt } from './aes-gcm';
-import type { EncryptedPayload } from './aes-gcm';
+import type { EncryptedPayload, CryptoKey } from './aes-gcm';
 
 export interface ReEncryptResult {
   total: number;

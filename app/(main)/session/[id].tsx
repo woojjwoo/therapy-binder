@@ -3,12 +3,14 @@
  * - Full block display with voice player
  * - Readable notes, tappable action items
  * - Mood visualization stripe
+ * - Uses session store for load + delete
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -19,44 +21,19 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Colors, moodColor } from '../../../src/theme/colors';
 import { Fonts, FontSizes } from '../../../src/theme/typography';
 import { useAuthStore } from '../../../src/stores/auth-store';
-import { getSession, deleteSession } from '../../../src/storage/local';
-import { decrypt } from '../../../src/crypto/aes-gcm';
+import { useSessionStore } from '../../../src/stores/session-store';
 import { VoicePlayer } from '../../../src/components/blocks/VoicePlayer';
+import { Card } from '../../../src/components/ui/Card';
 import type { Block } from '../../../src/models/block';
-
-interface ParsedSession {
-  moodScore: number;
-  createdAt: string;
-  blocks: Block[];
-  tags: string[];
-}
 
 export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const masterKey = useAuthStore((s) => s.masterKey);
-  const [session, setSession] = useState<ParsedSession | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { currentSession: session, currentLoading: loading, loadSession, removeSession, clearCurrent } = useSessionStore();
 
   useEffect(() => {
-    (async () => {
-      if (!masterKey || !id) return;
-      const row = await getSession(id);
-      if (!row) { setLoading(false); return; }
-
-      const plain = await decrypt(
-        { ciphertext: row.ciphertext, iv: row.iv, version: row.schema_ver },
-        masterKey
-      );
-      if (!plain) { setLoading(false); return; }
-      const data = JSON.parse(plain);
-      setSession({
-        moodScore: row.mood_score,
-        createdAt: row.created_at,
-        blocks: data.blocks ?? [],
-        tags: data.tags ?? [],
-      });
-      setLoading(false);
-    })();
+    if (masterKey && id) loadSession(id, masterKey);
+    return () => clearCurrent();
   }, [id, masterKey]);
 
   const handleDelete = () => {
@@ -66,8 +43,10 @@ export default function SessionDetailScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          if (id) await deleteSession(id);
-          router.back();
+          if (id) {
+            await removeSession(id);
+            router.back();
+          }
         },
       },
     ]);
@@ -81,6 +60,9 @@ export default function SessionDetailScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.error}>Session not found or could not be decrypted.</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+          <Text style={styles.back}>{'\u2039'} Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -97,10 +79,10 @@ export default function SessionDetailScreen() {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      {/* Header */}
+      {/* Mood banner */}
       <View style={[styles.moodBanner, { backgroundColor: color + '20' }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.back}>‹ Back</Text>
+          <Text style={styles.back}>{'\u2039'} Back</Text>
         </TouchableOpacity>
         <View style={styles.moodRow}>
           <View style={[styles.moodDot, { backgroundColor: color }]} />
@@ -144,40 +126,49 @@ function BlockRenderer({ block }: { block: Block }) {
   switch (block.type) {
     case 'text':
       return (
-        <View style={styles.blockCard}>
+        <Card style={styles.blockCard}>
           <Text style={styles.blockTypeLabel}>NOTES</Text>
           <Text style={styles.blockText}>{block.content}</Text>
-        </View>
+        </Card>
       );
     case 'action':
       return (
-        <View style={styles.blockCard}>
+        <Card style={styles.blockCard}>
           <Text style={styles.blockTypeLabel}>ACTION</Text>
           <View style={styles.actionRow}>
-            <Text style={styles.actionCheck}>{block.completed ? '✅' : '⬜️'}</Text>
+            <Text style={styles.actionCheck}>{block.completed ? '\u2705' : '\u2B1C\uFE0F'}</Text>
             <Text style={[styles.blockText, block.completed && styles.strikethrough]}>
               {block.content}
             </Text>
           </View>
-        </View>
+        </Card>
       );
     case 'voice':
       return (
-        <View style={styles.blockCard}>
+        <Card style={styles.blockCard}>
           <Text style={styles.blockTypeLabel}>VOICE MEMO</Text>
           <VoicePlayer
             localUri={block.localUri}
             durationMs={block.durationMs}
             label={block.label}
           />
-        </View>
+        </Card>
       );
     case 'image':
       return (
-        <View style={styles.blockCard}>
+        <Card style={styles.blockCard}>
           <Text style={styles.blockTypeLabel}>PHOTO</Text>
-          <Text style={styles.blockText}>{block.caption ?? '(no caption)'}</Text>
-        </View>
+          {block.localUri && block.localUri !== '[local-ref]' ? (
+            <Image
+              source={{ uri: block.localUri }}
+              style={styles.imagePreview}
+              resizeMode="cover"
+            />
+          ) : null}
+          {block.caption ? (
+            <Text style={styles.blockText}>{block.caption}</Text>
+          ) : null}
+        </Card>
       );
     default:
       return null;
@@ -187,7 +178,7 @@ function BlockRenderer({ block }: { block: Block }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.cream },
   content: { paddingBottom: 60 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.cream },
   error: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.barkBrown },
 
   moodBanner: {
@@ -257,15 +248,7 @@ const styles = StyleSheet.create({
   blockCard: {
     marginHorizontal: 16,
     marginBottom: 12,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 16,
     gap: 8,
-    shadowColor: Colors.earthBrown,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
   },
   blockTypeLabel: {
     fontFamily: Fonts.sansBold,
@@ -286,6 +269,11 @@ const styles = StyleSheet.create({
   },
   actionCheck: { fontSize: 18 },
   strikethrough: { textDecorationLine: 'line-through', opacity: 0.5 },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+  },
 
   deleteBtn: {
     margin: 20,

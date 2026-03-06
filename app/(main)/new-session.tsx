@@ -7,7 +7,7 @@
  *   - Draggable block cards
  *   - Mood slider
  *   - Tag chips
- *   - Save button (encrypts text content, persists)
+ *   - Save button (encrypts text content via saveEncryptedSession)
  */
 
 import React, { useState, useCallback } from 'react';
@@ -16,13 +16,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import DraggableFlatList, {
-  RenderItemParams,
+  type RenderItemParams,
 } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
@@ -39,13 +38,13 @@ import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 
 import { useAuthStore } from '../../src/stores/auth-store';
-import { encrypt } from '../../src/crypto/aes-gcm';
-import { saveSession } from '../../src/storage/local';
+import { useSessionStore } from '../../src/stores/session-store';
 import type { Block, BlockType, VoiceBlock, ImageBlock } from '../../src/models/block';
 import type { SessionEntry } from '../../src/models/session';
 
 export default function NewSessionScreen() {
   const masterKey = useAuthStore((s) => s.masterKey);
+  const { saveSession } = useSessionStore();
 
   const [insight, setInsight] = useState('');
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -121,7 +120,6 @@ export default function NewSessionScreen() {
       const sessionId = Crypto.randomUUID();
       const now = new Date().toISOString();
 
-      // Build full block list (insight always first)
       const insightBlock: Block = {
         id: Crypto.randomUUID(),
         type: 'insight',
@@ -130,35 +128,16 @@ export default function NewSessionScreen() {
       };
       const allBlocks = [insightBlock, ...blocks];
 
-      // Separate local-only refs from text content
-      const voiceBlocks = allBlocks.filter((b): b is VoiceBlock => b.type === 'voice');
-      const imageBlocks = allBlocks.filter((b): b is ImageBlock => b.type === 'image');
-
-      // Strip local URIs from encrypted payload (they stay in separate tables)
-      const encryptableBlocks = allBlocks.map((b) => {
-        if (b.type === 'voice' || b.type === 'image') {
-          return { ...b, localUri: '[local-ref]' };
-        }
-        return b;
-      });
-
-      const plaintext = JSON.stringify({
-        blocks: encryptableBlocks,
-        tags,
-        moodScore,
-      });
-
-      const payload = await encrypt(plaintext, masterKey);
-
-      const session: Pick<SessionEntry, 'id' | 'moodScore' | 'createdAt' | 'updatedAt'> = {
+      const session: SessionEntry = {
         id: sessionId,
+        blocks: allBlocks,
         moodScore,
+        tags,
         createdAt: now,
         updatedAt: now,
       };
 
-      await saveSession(session, payload, voiceBlocks, imageBlocks);
-
+      await saveSession(session, masterKey);
       router.back();
     } catch (err) {
       Alert.alert('Error', 'Failed to save session. Please try again.');
@@ -208,12 +187,12 @@ export default function NewSessionScreen() {
           <Text style={styles.title}>New Session</Text>
           <TouchableOpacity onPress={handleSave} disabled={saving}>
             <Text style={[styles.save, saving && styles.saveDim]}>
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? 'Saving\u2026' : 'Save'}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Insight input — above the draggable list */}
+        {/* Insight input */}
         <InsightInput value={insight} onChange={setInsight} />
 
         {/* Add-block buttons */}
@@ -238,7 +217,7 @@ export default function NewSessionScreen() {
                   activeOpacity={0.8}
                 >
                   <Text style={styles.saveButtonText}>
-                    {saving ? 'Encrypting & saving…' : '🔒 Save Session'}
+                    {saving ? 'Encrypting & saving\u2026' : '\uD83D\uDD12 Save Session'}
                   </Text>
                 </TouchableOpacity>
                 <Text style={styles.encryptNote}>
