@@ -46,23 +46,32 @@ export async function getBiometricType(): Promise<BiometricType> {
 // ─── Biometric flow ───────────────────────────────────────────────────────────
 
 /**
- * Generate a random AES-256 key and store it in SecureStore.
- * Returns a 24-word mnemonic the user can write down as a recovery backup.
+ * Generate a random AES-256 key, store it in SecureStore, and return it ready to use.
  */
-export async function generateAndStoreKey(): Promise<{ mnemonic: string }> {
-  // Generate 32 random bytes for the AES key
+export async function generateAndStoreKey(): Promise<{ key: CryptoKey }> {
   const randomBytes = ExpoCrypto.getRandomBytes(32);
   const keyHex = Array.from(randomBytes)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 
-  // Store in SecureStore (not gated behind biometrics so we can retrieve reliably)
   await SecureStore.setItemAsync(RAW_KEY_HEX_KEY, keyHex);
+  const key = await importRawKey(randomBytes);
+  return { key };
+}
 
-  // Generate a separate BIP-39 mnemonic as the human-readable backup
-  const mnemonic = generateMnemonic();
-
-  return { mnemonic };
+/**
+ * Retrieve and import the stored key without any biometric prompt.
+ * Returns null if no key is stored yet (first launch).
+ */
+export async function unlockWithStoredKey(): Promise<CryptoKey | null> {
+  try {
+    const keyHex = await SecureStore.getItemAsync(RAW_KEY_HEX_KEY);
+    if (!keyHex) return null;
+    const bytes = new Uint8Array(keyHex.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
+    return importRawKey(bytes);
+  } catch {
+    return null;
+  }
 }
 
 /**

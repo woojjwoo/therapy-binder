@@ -24,6 +24,7 @@ export default function SetupBiometricsScreen() {
   const [biometricType, setBiometricType] = useState<'faceid' | 'touchid' | 'passcode' | 'none'>('none');
   const [loading, setLoading] = useState(false);
   const setOnboarding = useAuthStore(s => s.setOnboarding);
+  const unlock = useAuthStore(s => s.unlock);
 
   useEffect(() => {
     getBiometricType().then(setBiometricType);
@@ -33,9 +34,9 @@ export default function SetupBiometricsScreen() {
     if (biometricType === 'none' || loading) return;
     setLoading(true);
     try {
-      const { mnemonic } = await generateAndStoreKey();
-      // Pass mnemonic to recovery screens; saltHex not needed (key is random)
-      setOnboarding({ saltHex: '', mnemonic });
+      const { key } = await generateAndStoreKey();
+      unlock(key);
+      setOnboarding({ saltHex: '', mnemonic: '' });
       router.push('/(auth)/recovery-key');
     } catch (e: any) {
       if (e?.message?.includes('cancel') || e?.message?.includes('dismiss')) {

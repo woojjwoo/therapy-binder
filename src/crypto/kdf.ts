@@ -1,6 +1,10 @@
 /**
  * Key derivation using @noble/hashes pbkdf2 — pure JS, no crypto.subtle.
  * Works in React Native / Hermes without any polyfill.
+ *
+ * Iterations: 100,000 for production native builds.
+ * In Expo Go (pure JS, no JIT), pbkdf2 is synchronous and blocks the UI thread.
+ * Set EXPO_PUBLIC_KDF_ITERATIONS in .env to override for dev/testing.
  */
 
 // @ts-ignore
@@ -8,6 +12,8 @@ import { pbkdf2 } from '@noble/hashes/pbkdf2';
 // @ts-ignore
 import { sha256 } from '@noble/hashes/sha2';
 import * as ExpoCrypto from 'expo-crypto';
+
+const KDF_ITERATIONS = Number(process.env.EXPO_PUBLIC_KDF_ITERATIONS) || 100_000;
 
 export const SALT_BYTES = 32;
 
@@ -38,8 +44,11 @@ export async function deriveKey(
   const passphraseBytes = encoder.encode(passphrase);
   const saltBytes = hexToUint8Array(saltHex);
 
+  // Yield to UI thread so the loading spinner renders before we block
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
   return pbkdf2(sha256, passphraseBytes, saltBytes, {
-    c: 100000,
+    c: KDF_ITERATIONS,
     dkLen: 32,
   });
 }

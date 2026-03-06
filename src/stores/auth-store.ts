@@ -47,19 +47,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   completeOnboarding: async (saltHex: string) => {
     const { onboarding } = get();
 
-    // Persist salt if present (passphrase flow)
     if (saltHex) {
       await setMeta(METADATA_KEYS.SALT, saltHex);
     }
 
-    // Persist passphrase securely if present
     if (onboarding?.passphrase) {
       const { storePassphraseSecurely } = await import('../crypto/secure-key');
       await storePassphraseSecurely(onboarding.passphrase);
     }
 
     await setMeta(METADATA_KEYS.SCHEMA_VERSION, '1');
-    await setMeta('onboarding_complete', 'true');
     set({ onboardingComplete: true, onboarding: null });
   },
 
