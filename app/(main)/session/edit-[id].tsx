@@ -85,8 +85,15 @@ export default function EditSessionScreen() {
   }, [currentSession, loaded]);
 
   // Mark dirty on any change after initial load
+  const populatedRef = useRef(false);
   useEffect(() => {
-    if (loaded) dirtyRef.current = true;
+    if (!loaded) return;
+    // Skip the first trigger caused by initial population
+    if (!populatedRef.current) {
+      populatedRef.current = true;
+      return;
+    }
+    dirtyRef.current = true;
   }, [insight, blocks, moodScore, tags]);
 
   // ─── Add block ──────────────────────────────────────────────────────────────
