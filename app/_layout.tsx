@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, AppState } from 'react-native';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import {
   useFonts,
   PlayfairDisplay_400Regular,
@@ -22,6 +23,7 @@ import { Colors } from '../src/theme/colors';
 const AUTO_LOCK_MS = 5 * 60 * 1000; // 5 minutes
 
 export default function RootLayout() {
+  usePreventScreenCapture();
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_400Regular,
     PlayfairDisplay_700Bold,

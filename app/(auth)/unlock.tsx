@@ -9,26 +9,29 @@ import { router } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
-import { unlockWithStoredKey } from '../../src/crypto/secure-key';
+import { unlockWithBiometrics } from '../../src/crypto/secure-key';
 
 export default function UnlockScreen() {
   const unlock = useAuthStore((s) => s.unlock);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const key = await unlockWithStoredKey();
-        if (key) {
-          unlock(key);
-          router.replace('/(main)/');
-        } else {
-          Alert.alert('Error', 'Could not retrieve your key. You may need to set up the app again.');
-        }
-      } catch (e) {
-        console.error('Unlock failed', e);
-        Alert.alert('Error', 'Something went wrong unlocking the app.');
+  const attemptUnlock = async () => {
+    try {
+      const key = await unlockWithBiometrics('Unlock The Therapy Binder');
+      if (key) {
+        unlock(key);
+        router.replace('/(main)/');
+      } else {
+        Alert.alert('Authentication required', 'Please authenticate to access your binder.');
       }
-    })();
+    } catch (e) {
+      console.error('Unlock failed', e);
+      Alert.alert('Error', 'Something went wrong unlocking the app.');
+    }
+  };
+
+  // Auto-trigger biometric auth on mount
+  useEffect(() => {
+    attemptUnlock();
   }, []);
 
   return (
