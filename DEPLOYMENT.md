@@ -1,81 +1,70 @@
-# Deployment: iOS TestFlight & App Store
+# Step-by-Step: Therapy Binder -> TestFlight
 
 ## Prerequisites
 
-- **Apple Developer account** ($99/year) enrolled at [developer.apple.com](https://developer.apple.com)
-- **EAS CLI** installed globally: `npm install -g eas-cli`
-- **Expo account** — create one at [expo.dev](https://expo.dev) if needed
+- Apple Developer Account ($99/yr at developer.apple.com)
+- EAS CLI: `npm install -g eas-cli`
+- Login: `eas login` (use Apple Developer email)
 
-## First-time setup
+## One-Time Setup
 
-1. Log in to EAS:
-   ```bash
-   eas login
-   ```
+### 1. Create App in App Store Connect
 
-2. Link the project (if not already linked):
-   ```bash
-   eas init
-   ```
+1. Go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com) -> My Apps -> + -> New App
+2. Fill in:
+   - **Platform:** iOS
+   - **Name:** The Therapy Binder
+   - **Bundle ID:** com.briancobb.therapybinder
+   - **SKU:** therapy-binder-001
+3. After creating, copy the **Apple ID** number from the App Information page
 
-3. Fill in your Apple credentials in `eas.json` under `submit.production.ios`:
-   - `appleId` — your Apple ID email
-   - `ascAppId` — your App Store Connect app ID (numeric)
-   - `appleTeamId` — your Apple Developer Team ID
+### 2. Configure eas.json
 
-## Building for TestFlight / App Store
-
-```bash
-# Production build (App Store / TestFlight)
-npm run build:ios
-
-# Or directly:
-eas build --platform ios --profile production
-```
-
-EAS will prompt you to sign in to your Apple Developer account and will manage provisioning profiles and certificates automatically.
-
-## Submitting to TestFlight
-
-After the build completes:
-
-```bash
-eas submit --platform ios --profile production
-```
-
-Or build and submit in one step:
-
-```bash
-eas build --platform ios --profile production --auto-submit
-```
-
-## Internal preview builds
-
-For testing on physical devices before submitting to TestFlight:
-
-```bash
-eas build --platform ios --profile preview
-```
-
-This creates an ad-hoc build you can install via a QR code link from the EAS dashboard.
-
-## Bumping the build number
-
-Before each new TestFlight submission, increment `buildNumber` in `app.json`:
+Open `eas.json` and fill in the `submit.production.ios` section:
 
 ```json
-"ios": {
-  "buildNumber": "2"
+{
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "your-apple-developer@email.com",
+        "ascAppId": "1234567890",
+        "appleTeamId": "ABC123DEF4"
+      }
+    }
+  }
 }
 ```
 
-The build number must increase with every upload to App Store Connect. The `version` field (e.g., `"1.0.0"`) only needs to change for new public releases.
+Where to find each value:
+- **appleId** — your Apple Developer email address
+- **ascAppId** — the Apple ID number from App Store Connect (step 1 above)
+- **appleTeamId** — go to [developer.apple.com/account](https://developer.apple.com/account) -> Membership -> Team ID
 
-## Quick reference
+## Build & Submit
 
-| Command | Purpose |
-|---------|---------|
-| `eas build --platform ios --profile development` | Dev client (simulator) |
-| `eas build --platform ios --profile preview` | Internal ad-hoc testing |
-| `eas build --platform ios --profile production` | App Store / TestFlight |
-| `eas submit --platform ios` | Submit latest build to App Store Connect |
+```bash
+# Build for App Store
+eas build --platform ios --profile production
+
+# After build completes (~10 min), submit to TestFlight
+eas submit --platform ios --latest
+```
+
+## After Submission
+
+1. Wait 15-30 min for TestFlight processing
+2. In App Store Connect, go to your app -> TestFlight
+3. Add yourself as an internal tester
+4. Open TestFlight on your physical iPhone to install and test
+5. When ready for public release: App Store Connect -> App Store -> Submit for Review
+
+## App Store Review Checklist
+
+Before submitting for App Store review, make sure you have:
+
+- [ ] Screenshots uploaded (see `app-store/SCREENSHOTS.md`)
+- [ ] Description pasted (see `app-store/METADATA.md`)
+- [ ] Privacy Policy URL: https://therapybinder.app/privacy
+- [ ] Support URL: https://therapybinder.app/support
+- [ ] Review notes added (see `app-store/REVIEW_NOTES.md`)
