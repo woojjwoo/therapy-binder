@@ -12,15 +12,24 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.therapybinder.app",
+      "supportsTablet": false,
+      "bundleIdentifier": "com.briancobb.therapybinder",
       "buildNumber": "1",
+      "usesAppleSignIn": false,
       "infoPlist": {
         "NSFaceIDUsageDescription": "Therapy Binder uses Face ID to protect access to your private sessions.",
         "NSMicrophoneUsageDescription": "Therapy Binder uses your microphone to record voice notes for your private sessions.",
         "NSPhotoLibraryUsageDescription": "Therapy Binder accesses your photo library to attach images to your private sessions.",
         "NSPhotoLibraryAddUsageDescription": "Therapy Binder saves images to your photo library.",
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
       }
     },
     "android": {
