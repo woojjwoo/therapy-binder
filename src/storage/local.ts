@@ -10,8 +10,9 @@ import {
   listSessions as dbListSessions,
   deleteSession as dbDeleteSession,
   deleteAllSessions as dbDeleteAllSessions,
+  searchSessionsFts as dbSearchSessionsFts,
 } from '../db';
-import type { StoredSession } from '../db';
+import type { StoredSession, FtsFields } from '../db';
 import { encrypt, decrypt } from '../crypto/aes-gcm';
 import type { EncryptedPayload, CryptoKey } from '../crypto/aes-gcm';
 import type { SessionEntry, SessionEncryptedPayload } from '../models/session';
@@ -24,6 +25,7 @@ export {
   dbGetSession as getSession,
   dbDeleteSession as deleteSession,
   dbDeleteAllSessions as deleteAllSessions,
+  dbSearchSessionsFts as searchSessionsFts,
 };
 
 // ─── Encrypt a session's text payload ─────────────────────────────────────────
@@ -80,6 +82,23 @@ export async function decryptSession(
   };
 }
 
+// ─── Extract plaintext for FTS indexing ──────────────────────────────────────
+
+function extractFtsFields(session: SessionEntry): FtsFields {
+  const insightBlock = session.blocks.find((b) => b.type === 'insight');
+  const insight = insightBlock && 'content' in insightBlock ? insightBlock.content : '';
+
+  const textParts = session.blocks
+    .filter((b) => (b.type === 'text' || b.type === 'action') && 'content' in b)
+    .map((b) => (b as { content: string }).content);
+
+  return {
+    content: textParts.join(' '),
+    tags: session.tags.join(' '),
+    insight,
+  };
+}
+
 // ─── Encrypt + save in one call ───────────────────────────────────────────────
 
 export async function saveEncryptedSession(
@@ -95,6 +114,8 @@ export async function saveEncryptedSession(
     (b): b is ImageBlock => b.type === 'image',
   );
 
+  const fts = extractFtsFields(session);
+
   await dbSaveSession(
     {
       id: session.id,
@@ -105,6 +126,7 @@ export async function saveEncryptedSession(
     payload,
     voiceBlocks,
     imageBlocks,
+    fts,
   );
 }
 

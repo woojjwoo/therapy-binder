@@ -3,7 +3,7 @@
  * Uses the session store for decrypted data management.
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,11 +21,13 @@ import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
 import { useSessionStore, type SessionCard } from '../../src/stores/session-store';
 import { EmptyState } from '../../src/components/ui/EmptyState';
+import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 
-export default function TimelineScreen() {
+function TimelineScreenInner() {
   const masterKey = useAuthStore((s) => s.masterKey);
-  const { cards, loading, loadTimeline } = useSessionStore();
+  const { cards, loading, searchResults, searching, loadTimeline, searchTimeline, clearSearch } = useSessionStore();
   const [query, setQuery] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -33,13 +35,20 @@ export default function TimelineScreen() {
     }, [masterKey])
   );
 
-  const filtered = query.trim()
-    ? cards.filter(
-        (c) =>
-          c.insight.toLowerCase().includes(query.toLowerCase()) ||
-          c.tags.some((t) => t.toLowerCase().includes(query.toLowerCase()))
-      )
-    : cards;
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const trimmed = query.trim();
+    if (!trimmed) {
+      clearSearch();
+      return;
+    }
+    debounceRef.current = setTimeout(() => {
+      if (masterKey) searchTimeline(trimmed, masterKey);
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, masterKey]);
+
+  const filtered = query.trim() ? (searchResults ?? []) : cards;
 
   const renderCard: ListRenderItem<SessionCard> = ({ item }) => {
     const color = moodColor(item.moodScore);
@@ -105,7 +114,7 @@ export default function TimelineScreen() {
       </View>
 
       {/* List */}
-      {loading ? (
+      {loading || searching ? (
         <View style={styles.center}>
           <ActivityIndicator color={Colors.earthBrown} />
         </View>
@@ -132,6 +141,14 @@ export default function TimelineScreen() {
         />
       )}
     </View>
+  );
+}
+
+export default function TimelineScreen() {
+  return (
+    <ErrorBoundary>
+      <TimelineScreenInner />
+    </ErrorBoundary>
   );
 }
 

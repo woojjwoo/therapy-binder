@@ -35,6 +35,13 @@ export const CREATE_TABLES = `
     local_uri   TEXT NOT NULL,
     block_order INTEGER NOT NULL DEFAULT 0
   );
+
+  CREATE VIRTUAL TABLE IF NOT EXISTS sessions_fts USING fts5(
+    id UNINDEXED,
+    content,
+    tags,
+    insight
+  );
 `;
 
 export const METADATA_KEYS = {

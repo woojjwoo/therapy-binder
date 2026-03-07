@@ -41,6 +41,7 @@ import { useSessionStore } from '../../src/stores/session-store';
 import { useEntitlement } from '../../src/hooks/useEntitlement';
 import type { Block, BlockType, VoiceBlock, ImageBlock } from '../../src/models/block';
 import type { SessionEntry } from '../../src/models/session';
+import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 
 const MOOD_EMOJIS = [
   { score: 1, emoji: '\uD83D\uDE1E', label: 'Rough' },
@@ -50,7 +51,7 @@ const MOOD_EMOJIS = [
   { score: 5, emoji: '\uD83D\uDE04', label: 'Great' },
 ] as const;
 
-export default function NewSessionScreen() {
+function NewSessionScreenInner() {
   const masterKey = useAuthStore((s) => s.masterKey);
   const { saveSession } = useSessionStore();
   const { canAddSession } = useEntitlement();
@@ -273,6 +274,14 @@ export default function NewSessionScreen() {
         />
       </KeyboardAvoidingView>
     </GestureHandlerRootView>
+  );
+}
+
+export default function NewSessionScreen() {
+  return (
+    <ErrorBoundary>
+      <NewSessionScreenInner />
+    </ErrorBoundary>
   );
 }
 

@@ -47,11 +47,18 @@ export interface StoredSession {
 
 // ─── Save ─────────────────────────────────────────────────────────────────────
 
+export interface FtsFields {
+  content: string;
+  tags: string;
+  insight: string;
+}
+
 export async function saveSession(
   session: { id: string; moodScore: number; createdAt: string; updatedAt: string },
   payload: EncryptedPayload,
   voiceBlocks: VoiceBlock[],
   imageBlocks: ImageBlock[],
+  fts?: FtsFields,
 ): Promise<void> {
   const db = await getDb();
 
@@ -69,6 +76,14 @@ export async function saveSession(
       session.updatedAt,
     ]
   );
+
+  if (fts) {
+    await db.runAsync(
+      `INSERT OR REPLACE INTO sessions_fts (id, content, tags, insight)
+       VALUES (?, ?, ?, ?)`,
+      [session.id, fts.content, fts.tags, fts.insight]
+    );
+  }
 
   for (const v of voiceBlocks) {
     await db.runAsync(
@@ -111,6 +126,7 @@ export async function listSessions(): Promise<StoredSession[]> {
 export async function deleteSession(id: string): Promise<void> {
   const db = await getDb();
   await db.runAsync('DELETE FROM sessions WHERE id = ?', [id]);
+  await db.runAsync('DELETE FROM sessions_fts WHERE id = ?', [id]);
 }
 
 export async function deleteAllSessions(): Promise<void> {
@@ -118,4 +134,16 @@ export async function deleteAllSessions(): Promise<void> {
   await db.runAsync('DELETE FROM sessions');
   await db.runAsync('DELETE FROM voice_refs');
   await db.runAsync('DELETE FROM image_refs');
+  await db.runAsync('DELETE FROM sessions_fts');
+}
+
+// ─── FTS Search ──────────────────────────────────────────────────────────────
+
+export async function searchSessionsFts(query: string): Promise<string[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ id: string }>(
+    `SELECT id FROM sessions_fts WHERE sessions_fts MATCH ? ORDER BY rank`,
+    [query]
+  );
+  return rows.map((r) => r.id);
 }

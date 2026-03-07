@@ -38,6 +38,7 @@ import { reEncryptAllSessions } from '../../src/crypto/reencrypt-all';
 import { getMeta, setMeta } from '../../src/db';
 import { METADATA_KEYS } from '../../src/db/schema';
 import { PassphraseInput } from '../../src/components/onboarding/PassphraseInput';
+import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 import {
   requestPermission,
   scheduleDaily,
@@ -163,7 +164,7 @@ function ChangePassphraseModal({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-export default function SettingsScreen() {
+function SettingsScreenInner() {
   const lock = useAuthStore((s) => s.lock);
   const masterKey = useAuthStore((s) => s.masterKey);
   const removeAll = useSessionStore((s) => s.removeAll);
@@ -400,6 +401,14 @@ export default function SettingsScreen() {
         onClose={() => setShowChangePass(false)}
       />
     </View>
+  );
+}
+
+export default function SettingsScreen() {
+  return (
+    <ErrorBoundary>
+      <SettingsScreenInner />
+    </ErrorBoundary>
   );
 }
 

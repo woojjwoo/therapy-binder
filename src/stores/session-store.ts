@@ -14,6 +14,7 @@ import {
   loadDecryptedSession,
   deleteSession,
   deleteAllSessions,
+  searchSessionsFts,
 } from '../storage/local';
 import type { DecryptedSession } from '../storage/local';
 import type { CryptoKey } from '../crypto/aes-gcm';
@@ -34,8 +35,12 @@ interface SessionState {
   loading: boolean;
   currentSession: DecryptedSession | null;
   currentLoading: boolean;
+  searchResults: SessionCard[] | null;
+  searching: boolean;
 
   loadTimeline: (key: CryptoKey) => Promise<void>;
+  searchTimeline: (query: string, key: CryptoKey) => Promise<void>;
+  clearSearch: () => void;
   loadSession: (id: string, key: CryptoKey) => Promise<void>;
   saveSession: (session: SessionEntry, key: CryptoKey) => Promise<void>;
   updateSession: (session: SessionEntry, key: CryptoKey) => Promise<void>;
@@ -68,6 +73,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   loading: false,
   currentSession: null,
   currentLoading: false,
+  searchResults: null,
+  searching: false,
 
   loadTimeline: async (key) => {
     set({ loading: true });
@@ -84,6 +91,37 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       set({ loading: false });
     }
   },
+
+  searchTimeline: async (query, key) => {
+    set({ searching: true });
+    try {
+      // Sanitize for FTS5: wrap each term with quotes to avoid syntax errors
+      const sanitized = query.trim().replace(/"/g, '');
+      if (!sanitized) {
+        set({ searchResults: null, searching: false });
+        return;
+      }
+      const ftsQuery = sanitized
+        .split(/\s+/)
+        .map((term) => `"${term}"`)
+        .join(' OR ');
+
+      const matchingIds = await searchSessionsFts(ftsQuery);
+      const rows = await listSessions();
+      const matchedRows = rows.filter((r) => matchingIds.includes(r.id));
+      const decrypted = await Promise.all(
+        matchedRows.map((row) => decryptSession(row, key)),
+      );
+      const cards = decrypted
+        .filter((s): s is DecryptedSession => s !== null)
+        .map(toCard);
+      set({ searchResults: cards, searching: false });
+    } catch {
+      set({ searching: false, searchResults: [] });
+    }
+  },
+
+  clearSearch: () => set({ searchResults: null }),
 
   loadSession: async (id, key) => {
     set({ currentLoading: true, currentSession: null });

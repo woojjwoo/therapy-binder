@@ -26,6 +26,7 @@ import { listSessions, decryptSession } from '../../src/storage/local';
 import { EmptyState } from '../../src/components/ui/EmptyState';
 import { useEntitlement } from '../../src/hooks/useEntitlement';
 import type { Block } from '../../src/models/block';
+import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 
 const MOOD_EMOJI_MAP: Record<number, string> = {
   1: '\uD83D\uDE1E',
@@ -212,7 +213,7 @@ function InsightQuotes({ sessions }: { sessions: SessionData[] }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-export default function PatternsScreen() {
+function PatternsScreenInner() {
   const masterKey = useAuthStore((s) => s.masterKey);
   const { isPro } = useEntitlement();
   const [sessions, setSessions] = useState<SessionData[]>([]);
@@ -296,6 +297,14 @@ export default function PatternsScreen() {
         </>
       )}
     </ScrollView>
+  );
+}
+
+export default function PatternsScreen() {
+  return (
+    <ErrorBoundary>
+      <PatternsScreenInner />
+    </ErrorBoundary>
   );
 }
 

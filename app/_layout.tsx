@@ -21,6 +21,7 @@ import { useAuthStore } from '../src/stores/auth-store';
 import { useSubscription } from '../src/stores/subscription-store';
 import { Colors } from '../src/theme/colors';
 import { scheduleDaily } from '../src/hooks/useNotifications';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
 const AUTO_LOCK_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -88,9 +89,9 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
-    </>
+    </ErrorBoundary>
   );
 }
