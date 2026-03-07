@@ -128,6 +128,15 @@ export default function SessionDetailScreen() {
         <BlockRenderer key={block.id} block={block} />
       ))}
 
+      {/* Edit */}
+      <TouchableOpacity
+        style={styles.editBtn}
+        onPress={() => router.push(`/session/edit-${id}`)}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.editBtnText}>Edit Session</Text>
+      </TouchableOpacity>
+
       {/* Delete */}
       <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
         <Text style={styles.deleteBtnText}>Delete Session</Text>
@@ -292,6 +301,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
+  editBtn: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    alignItems: 'center',
+    paddingVertical: 14,
+    backgroundColor: Colors.earthBrown,
+    borderRadius: 30,
+  },
+  editBtnText: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.md,
+    color: Colors.white,
+  },
   deleteBtn: {
     margin: 20,
     alignItems: 'center',

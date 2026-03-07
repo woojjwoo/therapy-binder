@@ -38,6 +38,7 @@ interface SessionState {
   loadTimeline: (key: CryptoKey) => Promise<void>;
   loadSession: (id: string, key: CryptoKey) => Promise<void>;
   saveSession: (session: SessionEntry, key: CryptoKey) => Promise<void>;
+  updateSession: (session: SessionEntry, key: CryptoKey) => Promise<void>;
   removeSession: (id: string) => Promise<void>;
   removeAll: () => Promise<void>;
   clearCurrent: () => void;
@@ -106,6 +107,24 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       tags: session.tags,
     });
     set((state) => ({ cards: [card, ...state.cards] }));
+  },
+
+  updateSession: async (session, key) => {
+    await saveEncryptedSession(session, key);
+    const card = toCard({
+      id: session.id,
+      moodScore: session.moodScore,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+      blocks: session.blocks,
+      tags: session.tags,
+    });
+    set((state) => ({
+      cards: state.cards.map((c) => (c.id === session.id ? card : c)),
+      currentSession: state.currentSession?.id === session.id
+        ? { id: session.id, moodScore: session.moodScore, createdAt: session.createdAt, updatedAt: session.updatedAt, blocks: session.blocks, tags: session.tags }
+        : state.currentSession,
+    }));
   },
 
   removeSession: async (id) => {

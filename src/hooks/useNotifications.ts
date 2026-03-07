@@ -35,3 +35,7 @@ export async function scheduleDaily(hour: number, minute: number): Promise<void>
 export async function cancelReminders(): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
+
+export async function getScheduledReminders() {
+  return Notifications.getAllScheduledNotificationsAsync();
+}

@@ -16,9 +16,11 @@ import {
   DMSans_500Medium,
   DMSans_700Bold,
 } from '@expo-google-fonts/dm-sans';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../src/stores/auth-store';
 import { useSubscription } from '../src/stores/subscription-store';
 import { Colors } from '../src/theme/colors';
+import { scheduleDaily } from '../src/hooks/useNotifications';
 
 const AUTO_LOCK_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -38,6 +40,16 @@ export default function RootLayout() {
   useEffect(() => {
     loadMeta();
     useSubscription.getState().checkSubscription();
+
+    // Re-schedule daily reminder if previously enabled (notifications clear on reinstall)
+    (async () => {
+      const enabled = await AsyncStorage.getItem('tb_reminder_enabled');
+      if (enabled === 'true') {
+        const time = await AsyncStorage.getItem('tb_reminder_time');
+        const [h, m] = time ? time.split(':').map(Number) : [20, 0];
+        await scheduleDaily(h, m);
+      }
+    })();
   }, []);
 
   // Auto-lock after 5 minutes in background
