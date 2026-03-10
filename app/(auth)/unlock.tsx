@@ -37,7 +37,7 @@ export default function UnlockScreen() {
   return (
     <View style={s.container}>
       <Text style={s.title}>The Therapy Binder</Text>
-      <ActivityIndicator color={Colors.earthBrown} size="large" style={s.spinner} />
+      <ActivityIndicator color={Colors.accent} size="large" style={s.spinner} />
       <Text style={s.hint}>Opening your binder…</Text>
     </View>
   );
@@ -45,7 +45,7 @@ export default function UnlockScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.cream, alignItems: 'center', justifyContent: 'center', gap: 20 },
-  title: { fontFamily: Fonts.serifBold, fontSize: 28, color: Colors.earthBrown },
+  title: { fontFamily: Fonts.serifBold, fontSize: 28, color: Colors.accent },
   spinner: { marginTop: 8 },
-  hint: { fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.barkBrown },
+  hint: { fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.textSecondary },
 });

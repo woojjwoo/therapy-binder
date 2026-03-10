@@ -96,7 +96,7 @@ const s = StyleSheet.create({
   chipSel: { backgroundColor: Colors.earthBrown, borderColor: Colors.earthBrown },
   chipText: { fontFamily: Fonts.sansMedium, fontSize: FontSizes.sm, color: Colors.earthBrown },
   chipTextSel: { color: Colors.white },
-  btn: { marginTop: 'auto', backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 14, alignItems: 'center' },
+  btn: { marginTop: 'auto', backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   btnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
   disabled: { opacity: 0.4 },
 });

@@ -1,0 +1,5 @@
+Your therapy journey deserves a safe, private space. The Therapy Binder keeps your session notes encrypted on your device with AES-256-GCM — the same standard trusted by governments and banks. Zero cloud storage. Zero tracking. Zero knowledge.
+
+Write session notes, record voice memos, track your mood, and tag themes across sessions. Watch patterns emerge over time with mood trends and insight quotes. Everything stays on your iPhone, protected by your passphrase and Face ID.
+
+Built for people in therapy who want to reflect between sessions without worrying about who might read their notes. Your words, your patterns, your privacy — no compromises.

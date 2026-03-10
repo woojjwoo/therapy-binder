@@ -6,12 +6,13 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { generateAndStoreKey, getBiometricType } from '../../src/crypto/secure-key';
 import { useAuthStore } from '../../src/stores/auth-store';
 
-const ICONS = { faceid: '🔐', touchid: '👆', passcode: '🔢', none: '🔒' };
+const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = { faceid: 'scan-outline', touchid: 'finger-print-outline', passcode: 'keypad-outline', none: 'lock-closed-outline' };
 const LABELS = { faceid: 'Face ID', touchid: 'Touch ID', passcode: 'Device Passcode', none: 'Authentication' };
 const DESCRIPTIONS = {
   faceid: 'Your binder will be locked with Face ID. No passphrase to remember.',
@@ -53,7 +54,7 @@ export default function SetupBiometricsScreen() {
     <SafeAreaView style={s.safe}>
       <View style={s.container}>
         <View style={s.hero}>
-          <Text style={s.icon}>{ICONS[biometricType]}</Text>
+          <Ionicons name={ICONS[biometricType]} size={64} color={Colors.accent} />
           <Text style={s.title}>{LABELS[biometricType]}</Text>
           <Text style={s.description}>{DESCRIPTIONS[biometricType]}</Text>
         </View>
@@ -89,16 +90,15 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.cream },
   container: { flex: 1, paddingHorizontal: 28, paddingVertical: 40, justifyContent: 'space-between' },
   hero: { alignItems: 'center', gap: 12, marginTop: 24 },
-  icon: { fontSize: 64 },
-  title: { fontFamily: Fonts.serifBold, fontSize: 32, color: Colors.earthBrown, textAlign: 'center' },
-  description: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.barkBrown, textAlign: 'center', lineHeight: 24 },
+  title: { fontFamily: Fonts.serifBold, fontSize: 32, color: Colors.accent, textAlign: 'center' },
+  description: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
   infoBox: { backgroundColor: Colors.white, borderRadius: 16, padding: 20, gap: 12, borderWidth: 1, borderColor: Colors.border },
   infoTitle: { fontFamily: Fonts.sansBold, fontSize: FontSizes.sm, color: Colors.earthBrown, marginBottom: 4 },
   infoRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   bullet: { fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.sage, marginTop: 1 },
   infoText: { flex: 1, fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.earthBrown, lineHeight: 20 },
-  btn: { backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 14, alignItems: 'center' },
+  btn: { backgroundColor: Colors.accent, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   btnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
   disabled: { opacity: 0.4 },
-  note: { fontFamily: Fonts.sans, fontSize: FontSizes.xs, color: Colors.barkBrown, textAlign: 'center' },
+  note: { fontFamily: Fonts.sans, fontSize: FontSizes.xs, color: Colors.textSecondary, textAlign: 'center' },
 });

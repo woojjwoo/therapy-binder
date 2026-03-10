@@ -5,11 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#2D4A3E"
     },
     "ios": {
       "supportsTablet": false,
@@ -20,7 +20,6 @@
         "NSFaceIDUsageDescription": "Therapy Binder uses Face ID to protect access to your private sessions.",
         "NSMicrophoneUsageDescription": "Therapy Binder uses your microphone to record voice notes for your private sessions.",
         "NSPhotoLibraryUsageDescription": "Therapy Binder accesses your photo library to attach images to your private sessions.",
-        "NSPhotoLibraryAddUsageDescription": "Therapy Binder saves images to your photo library.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "privacyManifests": {

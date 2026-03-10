@@ -1,16 +1,28 @@
 /**
  * Therapy Binder Design System — Colors
- * Warm, earthy palette designed to feel safe and grounded.
+ * Premium, calm, sophisticated palette.
  */
 
 export const Colors = {
   // Backgrounds
-  cream: '#FAF6F0',
-  creamDark: '#F0EAE0',
+  cream: '#FAFAF8',
+  creamDark: '#F3F2EF',
 
-  // Primary
-  earthBrown: '#5C4033',
-  barkBrown: '#8B6A5A',
+  // Primary accent (forest green)
+  accent: '#2D4A3E',
+  // Secondary accent (warm brown)
+  secondary: '#8B7355',
+
+  // Text
+  textPrimary: '#1A1A1A',
+  textSecondary: '#6B6B6B',
+  textTertiary: '#9E9E9E',
+
+  // UI
+  border: '#E8E6E1',
+  white: '#FFFFFF',
+  overlay: 'rgba(0, 0, 0, 0.06)',
+  destructive: '#C0392B',
 
   // Mood scale
   sage: '#7DAF8F',         // 8–10 (calm)
@@ -18,10 +30,9 @@ export const Colors = {
   blush: '#E8B4A0',        // 4–5
   terracotta: '#C4634A',   // 1–3
 
-  // UI
-  border: '#DDD5C8',
-  white: '#FFFFFF',
-  overlay: 'rgba(92, 64, 51, 0.08)',
+  // Legacy aliases — map to new tokens for compat
+  earthBrown: '#2D4A3E',
+  barkBrown: '#6B6B6B',
 } as const;
 
 /**

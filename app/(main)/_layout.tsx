@@ -1,4 +1,4 @@
-import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import { Colors } from '../../src/theme/colors';
@@ -11,7 +11,7 @@ export default function MainLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.earthBrown,
+        tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.barkBrown + '80',
         tabBarStyle: {
           backgroundColor: Colors.cream,
@@ -27,21 +27,21 @@ export default function MainLayout() {
         name="index"
         options={{
           title: 'Sessions',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📓</Text>,
+          tabBarIcon: ({ color, size }) => <Ionicons name="book-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="patterns"
         options={{
           title: 'Patterns',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📈</Text>,
+          tabBarIcon: ({ color, size }) => <Ionicons name="analytics-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⚙️</Text>,
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

@@ -19,6 +19,8 @@ import {
 import { useFocusEffect, router } from 'expo-router';
 import Svg, { Rect, Text as SvgText, Line } from 'react-native-svg';
 
+import { Ionicons } from '@expo/vector-icons';
+
 import { Colors, moodColor } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
@@ -27,19 +29,6 @@ import { EmptyState } from '../../src/components/ui/EmptyState';
 import { useEntitlement } from '../../src/hooks/useEntitlement';
 import type { Block } from '../../src/models/block';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
-
-const MOOD_EMOJI_MAP: Record<number, string> = {
-  1: '\uD83D\uDE1E',
-  2: '\uD83D\uDE15',
-  3: '\uD83D\uDE10',
-  4: '\uD83D\uDE42',
-  5: '\uD83D\uDE04',
-};
-
-function scoreToEmoji(score: number): string {
-  const mapped = Math.max(1, Math.min(5, Math.round(score / 2)));
-  return MOOD_EMOJI_MAP[mapped] ?? '\uD83D\uDE10';
-}
 
 interface SessionData {
   id: string;
@@ -60,7 +49,7 @@ function MoodTrend({ sessions }: { sessions: SessionData[] }) {
       <Text style={styles.trendTitle}>Your recent mood</Text>
       <View style={styles.trendRow}>
         {recent.map((s) => (
-          <Text key={s.id} style={styles.trendEmoji}>{scoreToEmoji(s.moodScore)}</Text>
+          <View key={s.id} style={[styles.trendDot, { backgroundColor: moodColor(s.moodScore) }]} />
         ))}
       </View>
     </View>
@@ -268,7 +257,7 @@ function PatternsScreenInner() {
 
       {!isPro ? (
         <View style={styles.lockedContainer}>
-          <Text style={styles.lockedIcon}>{'\uD83D\uDD12'}</Text>
+          <Ionicons name="lock-closed" size={48} color={Colors.accent} />
           <Text style={styles.lockedTitle}>Patterns is a Pro feature</Text>
           <Text style={styles.lockedMessage}>
             Upgrade to see mood trends, tag themes, and insights across your sessions.
@@ -283,7 +272,7 @@ function PatternsScreenInner() {
       ) : sessions.length === 0 ? (
         <View style={styles.emptyContainer}>
           <EmptyState
-            icon={'\uD83C\uDF31'}
+            icon={'leaf-outline'}
             title="No patterns yet"
             message="Save a few sessions to start seeing patterns here."
           />
@@ -387,6 +376,11 @@ const styles = StyleSheet.create({
   trendRow: {
     flexDirection: 'row',
     gap: 12,
+  },
+  trendDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
   },
   trendEmoji: {
     fontSize: 28,

@@ -27,6 +27,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
 import * as Crypto from 'expo-crypto';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 import { VoiceRecorderModal } from '../../src/components/blocks/VoiceRecorderModal';
 import { InsightInput } from '../../src/components/blocks/InsightInput';
@@ -43,13 +44,17 @@ import type { Block, BlockType, VoiceBlock, ImageBlock } from '../../src/models/
 import type { SessionEntry } from '../../src/models/session';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 
-const MOOD_EMOJIS = [
-  { score: 1, emoji: '\uD83D\uDE1E', label: 'Rough' },
-  { score: 2, emoji: '\uD83D\uDE15', label: 'Low' },
-  { score: 3, emoji: '\uD83D\uDE10', label: 'Okay' },
-  { score: 4, emoji: '\uD83D\uDE42', label: 'Good' },
-  { score: 5, emoji: '\uD83D\uDE04', label: 'Great' },
+const MOOD_OPTIONS = [
+  { score: 1, label: 'Rough', color: Colors.terracotta },
+  { score: 2, label: 'Low', color: Colors.terracotta },
+  { score: 3, label: 'Okay', color: Colors.blush },
+  { score: 4, label: 'Good', color: Colors.sageLight },
+  { score: 5, label: 'Great', color: Colors.sage },
 ] as const;
+
+/** Count words in a string */
+const countWords = (text: string): number =>
+  text.trim() ? text.trim().split(/\s+/).length : 0;
 
 function NewSessionScreenInner() {
   const masterKey = useAuthStore((s) => s.masterKey);
@@ -188,7 +193,11 @@ function NewSessionScreenInner() {
     setShowVoiceRecorder(false);
   }, []);
 
-  const selectedMood = MOOD_EMOJIS.find((m) => m.score === moodScore);
+  const selectedMood = MOOD_OPTIONS.find((m) => m.score === moodScore);
+
+  // Word count across insight + text blocks
+  const totalWords = countWords(insight) +
+    blocks.reduce((sum, b) => sum + ('content' in b ? countWords(b.content) : 0), 0);
 
   return (
     <GestureHandlerRootView style={styles.root}>
@@ -230,30 +239,52 @@ function NewSessionScreenInner() {
           contentContainerStyle={styles.listContent}
           ListFooterComponent={
             <View>
-              {/* Mood emoji selector */}
+              {/* Mood selector */}
               <View style={styles.moodSection}>
                 <Text style={styles.moodTitle}>How do you feel?</Text>
                 <View style={styles.moodRow}>
-                  {MOOD_EMOJIS.map((m) => (
-                    <TouchableOpacity
-                      key={m.score}
-                      style={[
-                        styles.moodBtn,
-                        moodScore === m.score && styles.moodBtnSelected,
-                      ]}
-                      onPress={() => setMoodScore(m.score)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.moodEmoji}>{m.emoji}</Text>
-                    </TouchableOpacity>
-                  ))}
+                  {MOOD_OPTIONS.map((m) => {
+                    const isSelected = moodScore === m.score;
+                    return (
+                      <TouchableOpacity
+                        key={m.score}
+                        style={[
+                          styles.moodBtn,
+                          isSelected && styles.moodBtnSelected,
+                        ]}
+                        onPress={() => setMoodScore(m.score)}
+                        activeOpacity={0.7}
+                      >
+                        <View
+                          style={[
+                            styles.moodDot,
+                            { backgroundColor: m.color },
+                            isSelected && styles.moodDotSelected,
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.moodOptionLabel,
+                            isSelected && styles.moodOptionLabelSelected,
+                          ]}
+                        >
+                          {m.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
-                {selectedMood && (
-                  <Text style={styles.moodLabel}>{selectedMood.label}</Text>
-                )}
               </View>
 
               <TagChips selected={tags} onChange={setTags} />
+
+              {/* Word count */}
+              <View style={styles.wordCount}>
+                <Text style={styles.wordCountText}>
+                  {totalWords} {totalWords === 1 ? 'word' : 'words'}
+                </Text>
+              </View>
+
               <View style={styles.saveFooter}>
                 <TouchableOpacity
                   style={[styles.saveButton, saving && styles.saveButtonDim]}
@@ -262,7 +293,7 @@ function NewSessionScreenInner() {
                   activeOpacity={0.8}
                 >
                   <Text style={styles.saveButtonText}>
-                    {saving ? 'Encrypting & saving\u2026' : '\uD83D\uDD12 Save Session'}
+                    {saving ? 'Encrypting & saving\u2026' : 'Save Session'}
                   </Text>
                 </TouchableOpacity>
                 <Text style={styles.encryptNote}>
@@ -339,27 +370,37 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   moodBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.white,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: Colors.border,
+    borderColor: 'transparent',
   },
   moodBtnSelected: {
-    backgroundColor: Colors.earthBrown + '15',
     borderColor: Colors.earthBrown,
+    backgroundColor: Colors.earthBrown + '10',
   },
-  moodEmoji: {
-    fontSize: 26,
+  moodDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    marginBottom: 4,
   },
-  moodLabel: {
-    fontFamily: Fonts.sansMedium,
-    fontSize: FontSizes.sm,
+  moodDotSelected: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  moodOptionLabel: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.xs,
     color: Colors.barkBrown,
-    marginTop: 8,
+  },
+  moodOptionLabelSelected: {
+    fontFamily: Fonts.sansBold,
+    color: Colors.earthBrown,
   },
 
   saveFooter: {
@@ -372,7 +413,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.earthBrown,
     paddingVertical: 16,
     paddingHorizontal: 40,
-    borderRadius: 30,
+    borderRadius: 12,
     width: '100%',
     alignItems: 'center',
   },
@@ -384,6 +425,17 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.white,
     letterSpacing: 0.5,
+  },
+  wordCount: {
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  wordCountText: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.xs,
+    color: Colors.barkBrown + '80',
   },
   encryptNote: {
     fontFamily: Fonts.sans,

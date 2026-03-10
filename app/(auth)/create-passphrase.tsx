@@ -98,7 +98,7 @@ const s = StyleSheet.create({
   bar: { flex: 1, height: 4, borderRadius: 2 },
   strengthLabel: { fontFamily: Fonts.sans, fontSize: FontSizes.xs, minWidth: 60 },
   mismatch: { fontFamily: Fonts.sans, fontSize: FontSizes.xs, color: Colors.terracotta },
-  btn: { backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 14, alignItems: 'center' },
+  btn: { backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   btnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
   disabled: { opacity: 0.4 },
 });

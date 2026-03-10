@@ -1,0 +1,1 @@
+Initial release. All data encrypted on-device with AES-256-GCM. Zero cloud storage.

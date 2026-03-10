@@ -1,12 +1,13 @@
 import { View, Text, StyleSheet, Pressable, SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 
-const PROPS = [
-  { icon: '\uD83D\uDD12', text: 'Your notes stay on your device' },
-  { icon: '\uD83C\uDFA4', text: 'Voice, notes, and insights in one place' },
-  { icon: '\uD83D\uDCC8', text: 'Find patterns across your therapy journey' },
+const PROPS: { icon: keyof typeof Ionicons.glyphMap; text: string }[] = [
+  { icon: 'lock-closed-outline', text: 'Your notes stay on your device' },
+  { icon: 'mic-outline', text: 'Voice, notes, and insights in one place' },
+  { icon: 'trending-up-outline', text: 'Find patterns across your therapy journey' },
 ];
 
 export default function WelcomeScreen() {
@@ -23,7 +24,7 @@ export default function WelcomeScreen() {
         <View style={s.props}>
           {PROPS.map((p, i) => (
             <View key={i} style={s.propRow}>
-              <Text style={s.propIcon}>{p.icon}</Text>
+              <Ionicons name={p.icon} size={22} color={Colors.accent} />
               <Text style={s.propText}>{p.text}</Text>
             </View>
           ))}
@@ -44,12 +45,11 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.cream },
   container: { flex: 1, paddingHorizontal: 28, paddingVertical: 40, justifyContent: 'space-between' },
   hero: { marginTop: 16, gap: 12 },
-  title: { fontFamily: Fonts.serifBold, fontSize: 40, color: Colors.earthBrown, lineHeight: 48 },
-  subtitle: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.barkBrown, lineHeight: 24 },
+  title: { fontFamily: Fonts.serifBold, fontSize: 40, color: Colors.accent, lineHeight: 48 },
+  subtitle: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.textSecondary, lineHeight: 24 },
   props: { gap: 20 },
   propRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
-  propIcon: { fontSize: 22, marginTop: 1 },
-  propText: { flex: 1, fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.earthBrown, lineHeight: 24 },
-  btn: { backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 14, alignItems: 'center' },
+  propText: { flex: 1, fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.accent, lineHeight: 24 },
+  btn: { backgroundColor: Colors.accent, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   btnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
 });

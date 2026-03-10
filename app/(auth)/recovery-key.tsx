@@ -17,7 +17,7 @@ export default function RecoveryKeyScreen() {
         <View style={s.header}>
           <Text style={s.title}>Your Recovery Key</Text>
           <View style={s.warning}>
-            <Text style={s.warnTitle}>⚠️ Write this down now</Text>
+            <Text style={s.warnTitle}>Write this down now</Text>
             <Text style={s.warnText}>
               These 24 words are the only way to recover your data if you forget your passphrase. We cannot recover them for you. If you lose this, your data is gone forever.
             </Text>
@@ -53,7 +53,7 @@ const s = StyleSheet.create({
   container: { paddingHorizontal: 28, paddingVertical: 40, gap: 28 },
   header: { gap: 16 },
   title: { fontFamily: Fonts.serifBold, fontSize: 32, color: Colors.earthBrown },
-  warning: { backgroundColor: '#FDF0EA', borderLeftWidth: 4, borderLeftColor: Colors.terracotta, borderRadius: 10, padding: 16, gap: 8 },
+  warning: { backgroundColor: '#FDF0EA', borderLeftWidth: 4, borderLeftColor: Colors.destructive, borderRadius: 10, padding: 16, gap: 8 },
   warnTitle: { fontFamily: Fonts.sansBold, fontSize: FontSizes.sm, color: Colors.terracotta },
   warnText: { fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.earthBrown, lineHeight: 20 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -65,7 +65,7 @@ const s = StyleSheet.create({
   checked: { backgroundColor: Colors.earthBrown },
   tick: { color: Colors.white, fontSize: 13, fontWeight: 'bold' },
   checkLabel: { flex: 1, fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.earthBrown, lineHeight: 20 },
-  btn: { backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 14, alignItems: 'center' },
+  btn: { backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   btnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
   disabled: { opacity: 0.4 },
 });
