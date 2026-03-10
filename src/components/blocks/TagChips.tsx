@@ -11,9 +11,11 @@ const DEFAULT_TAGS = [
 interface Props {
   selected: string[];
   onChange: (tags: string[]) => void;
+  isPro?: boolean;
+  onProTap?: () => void;
 }
 
-export function TagChips({ selected, onChange }: Props) {
+export function TagChips({ selected, onChange, isPro = true, onProTap }: Props) {
   const [custom, setCustom] = useState('');
 
   const toggle = (tag: string) => {
@@ -25,6 +27,11 @@ export function TagChips({ selected, onChange }: Props) {
   };
 
   const addCustom = () => {
+    if (!isPro) {
+      onProTap?.();
+      setCustom('');
+      return;
+    }
     const t = custom.trim().toLowerCase();
     if (t && !selected.includes(t)) {
       onChange([...selected, t]);
@@ -36,10 +43,18 @@ export function TagChips({ selected, onChange }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>TAGS</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>TAGS</Text>
+        {!isPro && (
+          <TouchableOpacity onPress={onProTap}>
+            <Text style={styles.proBadge}>PRO</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       <View style={styles.chips}>
         {allTags.map((tag) => {
           const active = selected.includes(tag);
+          const isCustomTag = !DEFAULT_TAGS.includes(tag);
           return (
             <TouchableOpacity
               key={tag}
@@ -53,18 +68,26 @@ export function TagChips({ selected, onChange }: Props) {
             </TouchableOpacity>
           );
         })}
-        <View style={styles.customChip}>
-          <TextInput
-            style={styles.customInput}
-            value={custom}
-            onChangeText={setCustom}
-            onSubmitEditing={addCustom}
-            placeholder="+ add tag"
-            placeholderTextColor={Colors.barkBrown + '60'}
-            returnKeyType="done"
-            autoCapitalize="none"
-          />
-        </View>
+        <TouchableOpacity
+          style={styles.customChip}
+          onPress={!isPro ? onProTap : undefined}
+          activeOpacity={isPro ? 1 : 0.7}
+        >
+          {isPro ? (
+            <TextInput
+              style={styles.customInput}
+              value={custom}
+              onChangeText={setCustom}
+              onSubmitEditing={addCustom}
+              placeholder="+ add tag"
+              placeholderTextColor={Colors.barkBrown + '60'}
+              returnKeyType="done"
+              autoCapitalize="none"
+            />
+          ) : (
+            <Text style={styles.customInputLocked}>+ add tag (Pro)</Text>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -75,12 +98,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
   label: {
     fontFamily: Fonts.sansBold,
     fontSize: FontSizes.xs,
     color: Colors.barkBrown,
     letterSpacing: 1.5,
-    marginBottom: 10,
+  },
+  proBadge: {
+    fontFamily: Fonts.sansBold,
+    fontSize: 9,
+    color: Colors.white,
+    backgroundColor: Colors.sage,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+    letterSpacing: 0.5,
   },
   chips: {
     flexDirection: 'row',
@@ -121,5 +160,11 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.earthBrown,
     minWidth: 80,
+  },
+  customInputLocked: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.sm,
+    color: Colors.barkBrown + '60',
+    paddingVertical: 2,
   },
 });

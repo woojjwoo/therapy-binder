@@ -32,6 +32,8 @@ import { Fonts, FontSizes } from '../../../src/theme/typography';
 
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useSessionStore } from '../../../src/stores/session-store';
+import { useEntitlement } from '../../../src/hooks/useEntitlement';
+import { UpgradeModal } from '../../../src/components/UpgradeModal';
 import type { Block, BlockType, VoiceBlock, ImageBlock } from '../../../src/models/block';
 import type { SessionEntry } from '../../../src/models/session';
 
@@ -47,6 +49,8 @@ export default function EditSessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const masterKey = useAuthStore((s) => s.masterKey);
   const { loadSession, currentSession, currentLoading, updateSession, clearCurrent } = useSessionStore();
+  const { canUseCustomTags } = useEntitlement();
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const [insight, setInsight] = useState('');
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -305,7 +309,12 @@ export default function EditSessionScreen() {
                 )}
               </View>
 
-              <TagChips selected={tags} onChange={setTags} />
+              <TagChips
+                selected={tags}
+                onChange={setTags}
+                isPro={canUseCustomTags}
+                onProTap={() => setShowUpgrade(true)}
+              />
               <View style={styles.saveFooter}>
                 <TouchableOpacity
                   style={[styles.saveButton, saving && styles.saveButtonDim]}
@@ -325,6 +334,7 @@ export default function EditSessionScreen() {
           }
         />
       </KeyboardAvoidingView>
+      <UpgradeModal visible={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </GestureHandlerRootView>
   );
 }

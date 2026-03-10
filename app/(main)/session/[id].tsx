@@ -6,7 +6,7 @@
  * - Uses session store for load + delete
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -17,11 +17,16 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { useLocalSearchParams, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, moodColor } from '../../../src/theme/colors';
 import { Fonts, FontSizes } from '../../../src/theme/typography';
 import { useAuthStore } from '../../../src/stores/auth-store';
 import { useSessionStore } from '../../../src/stores/session-store';
+import { useEntitlement } from '../../../src/hooks/useEntitlement';
+import { UpgradeModal } from '../../../src/components/UpgradeModal';
 import { VoicePlayer } from '../../../src/components/blocks/VoicePlayer';
 import { Card } from '../../../src/components/ui/Card';
 import type { Block } from '../../../src/models/block';
@@ -43,11 +48,49 @@ export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const masterKey = useAuthStore((s) => s.masterKey);
   const { currentSession: session, currentLoading: loading, loadSession, removeSession, clearCurrent } = useSessionStore();
+  const { canExport } = useEntitlement();
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => {
     if (masterKey && id) loadSession(id, masterKey);
     return () => clearCurrent();
   }, [id, masterKey]);
+
+  const handleExport = async () => {
+    if (!canExport) {
+      setShowUpgrade(true);
+      return;
+    }
+    if (!session) return;
+
+    const insightBlock = session.blocks.find((b) => b.type === 'insight');
+    const insight = insightBlock && 'content' in insightBlock ? insightBlock.content : '';
+    const date = new Date(session.createdAt).toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+
+    let text = `Therapy Session — ${date}\n`;
+    text += `Mood: ${session.moodScore}/10\n\n`;
+    if (insight) text += `Insight: "${insight}"\n\n`;
+    if (session.tags.length > 0) text += `Tags: ${session.tags.map(t => '#' + t).join(' ')}\n\n`;
+
+    for (const block of session.blocks.filter(b => b.type !== 'insight').sort((a, b) => a.order - b.order)) {
+      if (block.type === 'text' && 'content' in block) {
+        text += `Notes:\n${block.content}\n\n`;
+      } else if (block.type === 'action' && 'content' in block) {
+        text += `${block.completed ? '[x]' : '[ ]'} ${block.content}\n`;
+      }
+    }
+
+    text += `\n---\nExported from The Therapy Binder`;
+
+    const path = `${FileSystem.documentDirectory}session-${id}-${Date.now()}.txt`;
+    await FileSystem.writeAsStringAsync(path, text, { encoding: FileSystem.EncodingType.UTF8 });
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(path, { mimeType: 'text/plain' });
+    }
+  };
 
   const handleDelete = () => {
     Alert.alert('Delete session', 'Remove this session permanently?', [
@@ -128,6 +171,24 @@ export default function SessionDetailScreen() {
         <BlockRenderer key={block.id} block={block} />
       ))}
 
+      {/* Export */}
+      <TouchableOpacity
+        style={styles.exportBtn}
+        onPress={handleExport}
+        activeOpacity={0.8}
+      >
+        <View style={styles.exportRow}>
+          <Ionicons
+            name={canExport ? 'share-outline' : 'lock-closed'}
+            size={18}
+            color={Colors.earthBrown}
+          />
+          <Text style={styles.exportBtnText}>
+            Export{!canExport ? ' (Pro)' : ''}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
       {/* Edit */}
       <TouchableOpacity
         style={styles.editBtn}
@@ -141,6 +202,8 @@ export default function SessionDetailScreen() {
       <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
         <Text style={styles.deleteBtnText}>Delete Session</Text>
       </TouchableOpacity>
+
+      <UpgradeModal visible={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </ScrollView>
   );
 }
@@ -301,9 +364,29 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
-  editBtn: {
+  exportBtn: {
     marginHorizontal: 20,
     marginTop: 20,
+    alignItems: 'center',
+    paddingVertical: 14,
+    backgroundColor: Colors.white,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  exportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  exportBtnText: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.md,
+    color: Colors.earthBrown,
+  },
+  editBtn: {
+    marginHorizontal: 20,
+    marginTop: 12,
     alignItems: 'center',
     paddingVertical: 14,
     backgroundColor: Colors.earthBrown,

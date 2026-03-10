@@ -40,6 +40,7 @@ import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
 import { useSessionStore } from '../../src/stores/session-store';
 import { useEntitlement } from '../../src/hooks/useEntitlement';
+import { UpgradeModal } from '../../src/components/UpgradeModal';
 import type { Block, BlockType, VoiceBlock, ImageBlock } from '../../src/models/block';
 import type { SessionEntry } from '../../src/models/session';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
@@ -59,7 +60,8 @@ const countWords = (text: string): number =>
 function NewSessionScreenInner() {
   const masterKey = useAuthStore((s) => s.masterKey);
   const { saveSession } = useSessionStore();
-  const { canAddSession } = useEntitlement();
+  const { canAddSession, canUseCustomTags } = useEntitlement();
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Redirect to paywall if free limit reached
   useEffect(() => {
@@ -276,7 +278,12 @@ function NewSessionScreenInner() {
                 </View>
               </View>
 
-              <TagChips selected={tags} onChange={setTags} />
+              <TagChips
+                selected={tags}
+                onChange={setTags}
+                isPro={canUseCustomTags}
+                onProTap={() => setShowUpgrade(true)}
+              />
 
               {/* Word count */}
               <View style={styles.wordCount}>
@@ -304,6 +311,7 @@ function NewSessionScreenInner() {
           }
         />
       </KeyboardAvoidingView>
+      <UpgradeModal visible={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </GestureHandlerRootView>
   );
 }

@@ -31,6 +31,13 @@ export default function MainLayout() {
         }}
       />
       <Tabs.Screen
+        name="trends"
+        options={{
+          title: 'Trends',
+          tabBarIcon: ({ color, size }) => <Ionicons name="trending-up-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="patterns"
         options={{
           title: 'Patterns',
@@ -50,6 +57,10 @@ export default function MainLayout() {
       />
       <Tabs.Screen
         name="session/[id]"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="session/edit-[id]"
         options={{ href: null }}
       />
       <Tabs.Screen

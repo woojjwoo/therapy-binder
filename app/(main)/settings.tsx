@@ -31,6 +31,7 @@ import { useAuthStore } from '../../src/stores/auth-store';
 import { useSessionStore } from '../../src/stores/session-store';
 import { useSubscription } from '../../src/stores/subscription-store';
 import { useEntitlement } from '../../src/hooks/useEntitlement';
+import { UpgradeModal } from '../../src/components/UpgradeModal';
 import { exportAsJSON, exportAsPDF } from '../../src/storage/export';
 import { deriveKey } from '../../src/crypto/kdf';
 import { importRawKey } from '../../src/crypto/aes-gcm';
@@ -168,9 +169,10 @@ function SettingsScreenInner() {
   const lock = useAuthStore((s) => s.lock);
   const masterKey = useAuthStore((s) => s.masterKey);
   const removeAll = useSessionStore((s) => s.removeAll);
-  const { isPro, canExportPDF } = useEntitlement();
+  const { isPro, canExportPDF, sessionCount } = useEntitlement();
   const [showChangePass, setShowChangePass] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Reminders state
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -285,18 +287,36 @@ function SettingsScreenInner() {
           <Text style={styles.title}>Settings</Text>
         </View>
 
-        {/* Subscription */}
+        {/* Profile / Subscription */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>SUBSCRIPTION</Text>
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => router.push('/paywall')}
-          >
-            <Text style={styles.rowLabel}>
-              {isPro ? 'Pro \u2014 Active \u2713' : 'Subscription'}
-            </Text>
-            <Text style={styles.chevron}>{'\u203A'}</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>PROFILE</Text>
+          {isPro ? (
+            <View style={styles.proProfileRow}>
+              <View style={styles.proBadge}>
+                <Text style={styles.proBadgeText}>PRO</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>Pro Member</Text>
+                <Text style={styles.rowSub}>All features unlocked</Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push('/paywall')}>
+                <Text style={styles.chevron}>{'\u203A'}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.upgradeRow}
+              onPress={() => setShowUpgrade(true)}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>Free Plan</Text>
+                <Text style={styles.rowSub}>{sessionCount}/5 sessions used</Text>
+              </View>
+              <View style={styles.upgradeChip}>
+                <Text style={styles.upgradeChipText}>Upgrade</Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Security */}
@@ -400,6 +420,7 @@ function SettingsScreenInner() {
         visible={showChangePass}
         onClose={() => setShowChangePass(false)}
       />
+      <UpgradeModal visible={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </View>
   );
 }
@@ -470,6 +491,47 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.sans,
     fontSize: FontSizes.lg,
     color: Colors.barkBrown,
+  },
+  proProfileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    gap: 12,
+  },
+  proBadge: {
+    backgroundColor: Colors.sage,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  proBadgeText: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.xs,
+    color: Colors.white,
+    letterSpacing: 1,
+  },
+  upgradeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    gap: 12,
+  },
+  upgradeChip: {
+    backgroundColor: Colors.earthBrown,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  upgradeChipText: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.sm,
+    color: Colors.white,
   },
   dangerRow: {
     paddingHorizontal: 16,

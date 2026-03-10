@@ -15,9 +15,11 @@ import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useSubscription } from '../../src/stores/subscription-store';
 
 const FEATURES = [
-  { icon: '\u221E', label: 'Unlimited sessions', desc: 'No 10-session cap' },
-  { icon: '\uD83D\uDCC4', label: 'PDF export', desc: 'Generate transition reports' },
-  { icon: '\uD83D\uDCC8', label: 'Pattern tracking', desc: 'See mood trends and tag insights' },
+  { icon: '\u221E', label: 'Unlimited sessions', desc: 'No 5-session cap' },
+  { icon: '\uD83D\uDCC8', label: 'Mood trends', desc: 'Weekly & monthly mood visualization' },
+  { icon: '\uD83D\uDCC4', label: 'Export sessions', desc: 'Share as plain text' },
+  { icon: '\uD83C\uDFF7\uFE0F', label: 'Custom tags', desc: 'Organize with your own categories' },
+  { icon: '\uD83D\uDCC8', label: 'Pattern tracking', desc: 'See tag themes and insights' },
 ];
 
 export default function PaywallScreen() {
