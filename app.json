@@ -20,6 +20,7 @@
         "NSFaceIDUsageDescription": "Therapy Binder uses Face ID to protect access to your private sessions.",
         "NSMicrophoneUsageDescription": "Therapy Binder uses your microphone to record voice notes for your private sessions.",
         "NSPhotoLibraryUsageDescription": "Therapy Binder accesses your photo library to attach images to your private sessions.",
+        "NSUserNotificationsUsageDescription": "Therapy Binder sends you reminders for your scheduled therapy sessions.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "privacyManifests": {
@@ -49,7 +50,15 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0"
+          }
+        }
+      ]
     ]
   }
 }
