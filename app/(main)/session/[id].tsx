@@ -54,6 +54,7 @@ export default function SessionDetailScreen() {
   useEffect(() => {
     if (masterKey && id) loadSession(id, masterKey);
     return () => clearCurrent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, masterKey]);
 
   const handleExport = async () => {
