@@ -7,8 +7,16 @@ import { useAuthStore } from '../../src/stores/auth-store';
 import { mnemonicToWords, pickChallengeIndices, verifyChallengeAnswers } from '../../src/crypto';
 
 export default function ConfirmRecoveryScreen() {
-  const { mnemonic, saltHex } = useAuthStore((s) => s.onboarding!);
+  const onboarding = useAuthStore((s) => s.onboarding);
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+
+  // Guard: if onboarding state is missing, go back to setup
+  if (!onboarding?.mnemonic) {
+    router.replace('/(auth)/create-passphrase');
+    return null;
+  }
+
+  const { mnemonic, saltHex } = onboarding;
   const words = mnemonicToWords(mnemonic);
 
   const challengeIndices = useMemo(() => pickChallengeIndices(), []);
