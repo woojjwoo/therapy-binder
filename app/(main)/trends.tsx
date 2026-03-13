@@ -105,18 +105,54 @@ function TrendsScreenInner() {
       </View>
 
       {!isPro ? (
-        <View style={styles.lockedContainer}>
-          <Ionicons name="lock-closed" size={48} color={Colors.accent} />
-          <Text style={styles.lockedTitle}>Mood Trends is a Pro feature</Text>
-          <Text style={styles.lockedMessage}>
-            Upgrade to see weekly and monthly mood visualizations and track your progress.
-          </Text>
-          <TouchableOpacity
-            style={styles.upgradeBtn}
-            onPress={() => setShowUpgrade(true)}
-          >
-            <Text style={styles.upgradeBtnText}>Upgrade to Pro</Text>
-          </TouchableOpacity>
+        <View>
+          {/* Teaser: mock chart dimmed with overlay */}
+          <View style={styles.teaserWrapper}>
+            {/* Mock bar chart */}
+            <View style={styles.teaserChart}>
+              <View style={styles.teaserToggleRow}>
+                <View style={[styles.teaserToggleBtn, styles.teaserToggleBtnActive]}>
+                  <Text style={styles.teaserToggleText}>Weekly</Text>
+                </View>
+                <View style={styles.teaserToggleBtn}>
+                  <Text style={styles.teaserToggleText}>Monthly</Text>
+                </View>
+              </View>
+              <View style={styles.teaserStatsRow}>
+                {['Sessions', 'Avg Mood'].map((lbl) => (
+                  <View key={lbl} style={styles.teaserStatCard}>
+                    <View style={styles.teaserSkeleton} />
+                    <Text style={styles.teaserStatLabel}>{lbl}</Text>
+                  </View>
+                ))}
+              </View>
+              {/* Mock bars */}
+              <View style={styles.teaserBars}>
+                {[60, 40, 80, 55, 70, 45, 90].map((h, i) => (
+                  <View
+                    key={i}
+                    style={[styles.teaserBar, { height: h, backgroundColor: i % 2 === 0 ? Colors.sage : Colors.sageLight }]}
+                  />
+                ))}
+              </View>
+            </View>
+
+            {/* Overlay */}
+            <View style={styles.teaserOverlay}>
+              <Ionicons name="lock-closed" size={32} color={Colors.white} />
+              <Text style={styles.teaserOverlayTitle}>Unlock Mood Trends</Text>
+              <Text style={styles.teaserOverlayMsg}>
+                See how your mood evolves week by week and spot your patterns.
+              </Text>
+              <TouchableOpacity
+                style={styles.upgradeBtn}
+                onPress={() => setShowUpgrade(true)}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.upgradeBtnText}>Upgrade to Pro</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <UpgradeModal visible={showUpgrade} onClose={() => setShowUpgrade(false)} />
         </View>
       ) : (
@@ -408,36 +444,108 @@ const styles = StyleSheet.create({
     color: Colors.barkBrown,
   },
 
-  // Locked state
-  lockedContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingTop: 60,
-    gap: 12,
+  // Teaser (blurred mock preview for free users)
+  teaserWrapper: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
-  lockedTitle: {
+  teaserChart: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    opacity: 0.18,
+  },
+  teaserToggleRow: {
+    flexDirection: 'row',
+    backgroundColor: Colors.creamDark,
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 12,
+  },
+  teaserToggleBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  teaserToggleBtnActive: {
+    backgroundColor: Colors.white,
+  },
+  teaserToggleText: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.sm,
+    color: Colors.barkBrown,
+  },
+  teaserStatsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  teaserStatCard: {
+    flex: 1,
+    backgroundColor: Colors.creamDark,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    gap: 6,
+  },
+  teaserSkeleton: {
+    width: 40,
+    height: 24,
+    backgroundColor: Colors.border,
+    borderRadius: 6,
+  },
+  teaserStatLabel: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.xs,
+    color: Colors.barkBrown,
+  },
+  teaserBars: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-around',
+    height: 100,
+    paddingHorizontal: 8,
+  },
+  teaserBar: {
+    width: 28,
+    borderRadius: 4,
+  },
+  teaserOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.accent + 'E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingHorizontal: 32,
+    paddingVertical: 24,
+    borderRadius: 16,
+  },
+  teaserOverlayTitle: {
     fontFamily: Fonts.serifBold,
     fontSize: FontSizes.xl,
-    color: Colors.earthBrown,
+    color: Colors.white,
     textAlign: 'center',
   },
-  lockedMessage: {
+  teaserOverlayMsg: {
     fontFamily: Fonts.sans,
-    fontSize: FontSizes.md,
-    color: Colors.barkBrown,
+    fontSize: FontSizes.sm,
+    color: Colors.white + 'CC',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   upgradeBtn: {
-    backgroundColor: Colors.earthBrown,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
+    backgroundColor: Colors.white,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
     borderRadius: 30,
-    marginTop: 8,
+    marginTop: 4,
   },
   upgradeBtnText: {
     fontFamily: Fonts.sansBold,
     fontSize: FontSizes.md,
-    color: Colors.white,
+    color: Colors.accent,
   },
 });

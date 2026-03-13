@@ -13,7 +13,9 @@ import {
   TextInput,
   StyleSheet,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 
 import { Colors, moodColor } from '../../src/theme/colors';
@@ -23,6 +25,71 @@ import { useSessionStore, type SessionCard } from '../../src/stores/session-stor
 import { EmptyState } from '../../src/components/ui/EmptyState';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 import { SampleSessionCards } from '../../src/components/SampleSessionCard';
+import { useEntitlement, FREE_SESSION_LIMIT } from '../../src/hooks/useEntitlement';
+
+const CONVERSION_BANNER_DISMISSED_KEY = 'tb_conversion_banner_dismissed';
+const CONVERSION_TRIGGER_COUNT = 8;
+
+// ─── Conversion Banner ───────────────────────────────────────────────────────
+
+function ConversionBanner({ sessionCount, onDismiss, onUpgrade }: {
+  sessionCount: number;
+  onDismiss: () => void;
+  onUpgrade: () => void;
+}) {
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+  }, []);
+
+  return (
+    <Animated.View style={[bannerStyles.container, { opacity }]}>
+      <View style={bannerStyles.textWrap}>
+        <Text style={bannerStyles.text}>
+          You've used {sessionCount} of {FREE_SESSION_LIMIT} free sessions.
+        </Text>
+        <TouchableOpacity onPress={onUpgrade}>
+          <Text style={bannerStyles.cta}>Upgrade to Pro for unlimited journaling →</Text>
+        </TouchableOpacity>
+      </View>
+      <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <Text style={bannerStyles.dismiss}>✕</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+const bannerStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#FFF8EE',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E8C980',
+    gap: 8,
+  },
+  textWrap: { flex: 1, gap: 2 },
+  text: {
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 13,
+    color: '#5C4A1A',
+  },
+  cta: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 13,
+    color: '#2D4A3E',
+  },
+  dismiss: {
+    fontFamily: 'System',
+    fontSize: 13,
+    color: '#6B6B6B',
+  },
+});
 
 type SessionSection = {
   title: string;
@@ -67,7 +134,9 @@ function estimateWordCount(text: string): number {
 function TimelineScreenInner() {
   const masterKey = useAuthStore((s) => s.masterKey);
   const { cards, loading, searchResults, searching, loadTimeline, searchTimeline, clearSearch } = useSessionStore();
+  const { isPro, sessionCount } = useEntitlement();
   const [query, setQuery] = useState('');
+  const [showConversionBanner, setShowConversionBanner] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useFocusEffect(
@@ -75,6 +144,14 @@ function TimelineScreenInner() {
       if (masterKey) loadTimeline(masterKey);
     }, [masterKey])
   );
+
+  // Conversion banner: show at 8 sessions for free users
+  useEffect(() => {
+    if (isPro || sessionCount < CONVERSION_TRIGGER_COUNT) return;
+    AsyncStorage.getItem(CONVERSION_BANNER_DISMISSED_KEY).then((val) => {
+      if (!val) setShowConversionBanner(true);
+    });
+  }, [isPro, sessionCount]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -160,11 +237,25 @@ function TimelineScreenInner() {
           style={styles.search}
           value={query}
           onChangeText={setQuery}
-          placeholder="Search your sessions..."
+          placeholder="Search by mood, tag, or insight..."
           placeholderTextColor={Colors.barkBrown + '60'}
           clearButtonMode="while-editing"
         />
       </View>
+
+      {/* Conversion banner */}
+      {showConversionBanner && !isPro && (
+        <ConversionBanner
+          sessionCount={sessionCount}
+          onDismiss={async () => {
+            await AsyncStorage.setItem(CONVERSION_BANNER_DISMISSED_KEY, 'true');
+            setShowConversionBanner(false);
+          }}
+          onUpgrade={() => {
+            router.push('/paywall');
+          }}
+        />
+      )}
 
       {/* List */}
       {loading || searching ? (

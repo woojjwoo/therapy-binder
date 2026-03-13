@@ -256,18 +256,58 @@ function PatternsScreenInner() {
       </View>
 
       {!isPro ? (
-        <View style={styles.lockedContainer}>
-          <Ionicons name="lock-closed" size={48} color={Colors.accent} />
-          <Text style={styles.lockedTitle}>Patterns is a Pro feature</Text>
-          <Text style={styles.lockedMessage}>
-            Upgrade to see mood trends, tag themes, and insights across your sessions.
-          </Text>
-          <TouchableOpacity
-            style={styles.upgradeBtn}
-            onPress={() => router.push('/paywall')}
-          >
-            <Text style={styles.upgradeBtnText}>Upgrade to Pro</Text>
-          </TouchableOpacity>
+        <View>
+          {/* Teaser: mock patterns preview with overlay */}
+          <View style={styles.teaserWrapper}>
+            {/* Mock content */}
+            <View style={styles.teaserContent}>
+              {/* Mock mood dots */}
+              <View style={styles.teaserCard}>
+                <Text style={styles.teaserCardTitle}>Recent Mood</Text>
+                <View style={styles.teaserDotRow}>
+                  {[Colors.terracotta, Colors.blush, Colors.sage, Colors.sageLight, Colors.sage, Colors.sage, Colors.blush].map((c, i) => (
+                    <View key={i} style={[styles.teaserDot, { backgroundColor: c }]} />
+                  ))}
+                </View>
+              </View>
+              {/* Mock tag clusters */}
+              <View style={styles.teaserCard}>
+                <Text style={styles.teaserCardTitle}>Tag Themes</Text>
+                <View style={styles.teaserTagGrid}>
+                  {['#anxiety', '#work', '#growth', '#relationships'].map((t) => (
+                    <View key={t} style={styles.teaserTagChip}>
+                      <Text style={styles.teaserTagText}>{t}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              {/* Mock insight */}
+              <View style={styles.teaserCard}>
+                <Text style={styles.teaserCardTitle}>Recent Insights</Text>
+                {['Explored childhood patterns.', 'Talked through work anxiety.'].map((ins, i) => (
+                  <View key={i} style={styles.teaserQuote}>
+                    <View style={styles.teaserSkeletonLine} />
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* Overlay */}
+            <View style={styles.teaserOverlay}>
+              <Ionicons name="lock-closed" size={32} color={Colors.white} />
+              <Text style={styles.teaserOverlayTitle}>Unlock Patterns</Text>
+              <Text style={styles.teaserOverlayMsg}>
+                See tag themes, emotional trends, and your most insightful moments.
+              </Text>
+              <TouchableOpacity
+                style={styles.upgradeBtn}
+                onPress={() => router.push('/paywall')}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.upgradeBtnText}>Upgrade to Pro</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       ) : sessions.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -318,38 +358,96 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Locked state
-  lockedContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingTop: 60,
+  // Teaser styles
+  teaserWrapper: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  teaserContent: {
+    opacity: 0.18,
     gap: 12,
   },
-  lockedIcon: { fontSize: 48 },
-  lockedTitle: {
+  teaserCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    padding: 16,
+    gap: 10,
+  },
+  teaserCardTitle: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.sm,
+    color: Colors.barkBrown,
+  },
+  teaserDotRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  teaserDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  teaserTagGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  teaserTagChip: {
+    backgroundColor: Colors.creamDark,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  teaserTagText: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.xs,
+    color: Colors.barkBrown,
+  },
+  teaserQuote: {
+    paddingVertical: 4,
+  },
+  teaserSkeletonLine: {
+    height: 14,
+    backgroundColor: Colors.border,
+    borderRadius: 6,
+    width: '80%',
+  },
+  teaserOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.accent + 'E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingHorizontal: 32,
+    paddingVertical: 32,
+    borderRadius: 16,
+  },
+  teaserOverlayTitle: {
     fontFamily: Fonts.serifBold,
     fontSize: FontSizes.xl,
-    color: Colors.earthBrown,
+    color: Colors.white,
     textAlign: 'center',
   },
-  lockedMessage: {
+  teaserOverlayMsg: {
     fontFamily: Fonts.sans,
-    fontSize: FontSizes.md,
-    color: Colors.barkBrown,
+    fontSize: FontSizes.sm,
+    color: Colors.white + 'CC',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   upgradeBtn: {
-    backgroundColor: Colors.earthBrown,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
+    backgroundColor: Colors.white,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
     borderRadius: 30,
-    marginTop: 8,
+    marginTop: 4,
   },
   upgradeBtnText: {
     fontFamily: Fonts.sansBold,
     fontSize: FontSizes.md,
-    color: Colors.white,
+    color: Colors.accent,
   },
 
   // Mood trend

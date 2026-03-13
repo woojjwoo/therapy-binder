@@ -19,6 +19,9 @@ export default function WelcomeScreen() {
           <Text style={s.subtitle}>
             Your sessions, your words,{'\n'}your patterns. Private by design.
           </Text>
+          <View style={s.taglineRow}>
+            <Text style={s.tagline}>Private. Encrypted. Yours alone.</Text>
+          </View>
         </View>
 
         <View style={s.props}>
@@ -52,4 +55,20 @@ const s = StyleSheet.create({
   propText: { flex: 1, fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.accent, lineHeight: 24 },
   btn: { backgroundColor: Colors.accent, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   btnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
+  taglineRow: {
+    backgroundColor: Colors.accent + '12',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: Colors.accent + '30',
+    marginTop: 4,
+  },
+  tagline: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.xs,
+    color: Colors.accent,
+    letterSpacing: 0.5,
+  },
 });

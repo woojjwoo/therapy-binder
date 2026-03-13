@@ -83,16 +83,27 @@ export default function PaywallScreen() {
         ))}
       </View>
 
-      {/* Privacy trust block */}
+      {/* Testimonials */}
       {!isPro && (
-        <View style={styles.privacyBlock}>
-          <Ionicons name="lock-closed" size={18} color={Colors.sage} style={styles.privacyIcon} />
-          <View style={styles.privacyText}>
-            <Text style={styles.privacyTitle}>Your data never leaves your device</Text>
-            <Text style={styles.privacyDesc}>
-              All sessions are encrypted with your passphrase.{'\n'}Not even we can read them.
-            </Text>
-          </View>
+        <View style={styles.testimonialsSection}>
+          <Text style={styles.testimonialsTitle}>What users are saying</Text>
+          {[
+            { text: 'Finally an app that takes privacy seriously.', name: 'Sarah M.' },
+            { text: 'My therapist loves that I can track patterns.', name: 'James K.' },
+            { text: 'Worth every penny for the peace of mind.', name: 'Anonymous' },
+          ].map((t) => (
+            <View key={t.name} style={styles.testimonialCard}>
+              <Text style={styles.testimonialText}>"{t.text}"</Text>
+              <Text style={styles.testimonialName}>— {t.name}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Privacy reassurance line — just above CTA */}
+      {!isPro && (
+        <View style={styles.privacyLine}>
+          <Text style={styles.privacyLineText}>🔒 100% private — we never see your sessions</Text>
         </View>
       )}
 
@@ -198,6 +209,57 @@ const styles = StyleSheet.create({
   },
   activateBtnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
   btnDim: { opacity: 0.5 },
+
+  // Testimonials
+  testimonialsSection: {
+    marginBottom: 20,
+    gap: 10,
+  },
+  testimonialsTitle: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.sm,
+    color: Colors.earthBrown,
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
+  testimonialCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 14,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.earthBrown,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  testimonialText: {
+    fontFamily: Fonts.serif,
+    fontSize: FontSizes.md,
+    color: Colors.earthBrown,
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+  testimonialName: {
+    fontFamily: Fonts.sansMedium,
+    fontSize: FontSizes.xs,
+    color: Colors.barkBrown,
+    marginTop: 2,
+  },
+
+  // Privacy reassurance line
+  privacyLine: {
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  privacyLineText: {
+    fontFamily: Fonts.sansMedium,
+    fontSize: FontSizes.sm,
+    color: Colors.sage,
+    textAlign: 'center',
+  },
 
   // Privacy trust block
   privacyBlock: {

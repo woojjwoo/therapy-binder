@@ -23,6 +23,7 @@ import {
   ActivityIndicator,
   Switch,
   Platform,
+  Linking,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -472,6 +473,44 @@ function SettingsScreenInner() {
               <Text style={styles.comingSoonText}>Soon</Text>
             </View>
           </View>
+        </View>
+
+        {/* App / About */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>APP</Text>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => Linking.openURL('https://apps.apple.com/app/therapy-binder')}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="star-outline" size={18} color={Colors.barkBrown} style={styles.rowIcon} />
+              <View>
+                <Text style={styles.rowLabel}>Rate the App</Text>
+                <Text style={styles.rowSub}>Share your experience on the App Store</Text>
+              </View>
+            </View>
+            <Text style={styles.chevron}>{'\u203A'}</Text>
+          </TouchableOpacity>
+          {isPro && (
+            <TouchableOpacity
+              style={styles.row}
+              onPress={handleExportJSON}
+              disabled={exporting}
+            >
+              <View style={styles.rowLeft}>
+                <Ionicons name="archive-outline" size={18} color={Colors.barkBrown} style={styles.rowIcon} />
+                <View>
+                  <Text style={styles.rowLabel}>Export All Sessions</Text>
+                  <Text style={styles.rowSub}>Download all sessions as JSON</Text>
+                </View>
+              </View>
+              {exporting ? (
+                <ActivityIndicator color={Colors.earthBrown} />
+              ) : (
+                <Text style={styles.chevron}>{'\u203A'}</Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Danger zone */}

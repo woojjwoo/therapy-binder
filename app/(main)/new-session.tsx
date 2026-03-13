@@ -10,7 +10,7 @@
  *   - Save button (encrypts text content via saveEncryptedSession)
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,9 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DraggableFlatList, {
   type RenderItemParams,
 } from 'react-native-draggable-flatlist';
@@ -44,6 +46,72 @@ import { UpgradeModal } from '../../src/components/UpgradeModal';
 import type { Block, BlockType, VoiceBlock, ImageBlock } from '../../src/models/block';
 import type { SessionEntry } from '../../src/models/session';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
+import { requestPermission } from '../../src/hooks/useNotifications';
+
+const SESSION_TIP_KEY = 'tb_session_tip_shown';
+
+// ─── Tip Banner ──────────────────────────────────────────────────────────────
+
+function SessionTipBanner() {
+  const [visible, setVisible] = useState(false);
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    AsyncStorage.getItem(SESSION_TIP_KEY).then((val) => {
+      if (!val) setVisible(true);
+    });
+  }, []);
+
+  const dismiss = async () => {
+    Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(() =>
+      setVisible(false)
+    );
+    await AsyncStorage.setItem(SESSION_TIP_KEY, 'true');
+  };
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View style={[tipStyles.banner, { opacity }]}>
+      <Text style={tipStyles.text}>
+        💡 Start with your mood, then add notes, voice, or action items
+      </Text>
+      <TouchableOpacity onPress={dismiss} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <Text style={tipStyles.dismiss}>✕</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+const tipStyles = StyleSheet.create({
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+    backgroundColor: '#EAF2EE',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: '#7DAF8F',
+    gap: 8,
+  },
+  text: {
+    flex: 1,
+    fontFamily: 'System',
+    fontSize: 13,
+    color: '#2D4A3E',
+    lineHeight: 18,
+  },
+  dismiss: {
+    fontFamily: 'System',
+    fontSize: 13,
+    color: '#6B6B6B',
+    paddingLeft: 4,
+  },
+});
 
 const MOOD_OPTIONS = [
   { score: 1, label: 'Rough', color: Colors.terracotta },
@@ -60,7 +128,7 @@ const countWords = (text: string): number =>
 function NewSessionScreenInner() {
   const masterKey = useAuthStore((s) => s.masterKey);
   const { saveSession } = useSessionStore();
-  const { canAddSession, canUseCustomTags } = useEntitlement();
+  const { canAddSession, canUseCustomTags, sessionCount } = useEntitlement();
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Redirect to paywall if free limit reached
@@ -166,6 +234,26 @@ function NewSessionScreenInner() {
       };
 
       await saveSession(session, masterKey);
+
+      // First session — prompt for notification permission
+      if (sessionCount === 0) {
+        Alert.alert(
+          'Want a daily reminder to journal?',
+          '→ Enable notifications to build a consistent habit.',
+          [
+            { text: 'Not now', style: 'cancel', onPress: () => router.back() },
+            {
+              text: 'Enable',
+              onPress: async () => {
+                await requestPermission();
+                router.back();
+              },
+            },
+          ]
+        );
+        return;
+      }
+
       router.back();
     } catch (err) {
       Alert.alert('Error', 'Failed to save session. Please try again.');
@@ -226,6 +314,38 @@ function NewSessionScreenInner() {
           </TouchableOpacity>
         </View>
 
+        {/* First-visit tip */}
+        <SessionTipBanner />
+
+        {/* Mood selector — first interaction */}
+        <View style={styles.moodSectionTop}>
+          <Text style={styles.moodTitleTop}>How do you feel today?</Text>
+          <View style={styles.moodRow}>
+            {MOOD_OPTIONS.map((m) => {
+              const isSelected = moodScore === m.score;
+              return (
+                <TouchableOpacity
+                  key={m.score}
+                  style={[styles.moodBtn, isSelected && styles.moodBtnSelected]}
+                  onPress={() => setMoodScore(m.score)}
+                  activeOpacity={0.7}
+                >
+                  <View
+                    style={[
+                      styles.moodDot,
+                      { backgroundColor: m.color },
+                      isSelected && styles.moodDotSelected,
+                    ]}
+                  />
+                  <Text style={[styles.moodOptionLabel, isSelected && styles.moodOptionLabelSelected]}>
+                    {m.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         {/* Insight input */}
         <InsightInput value={insight} onChange={setInsight} />
 
@@ -241,43 +361,6 @@ function NewSessionScreenInner() {
           contentContainerStyle={styles.listContent}
           ListFooterComponent={
             <View>
-              {/* Mood selector */}
-              <View style={styles.moodSection}>
-                <Text style={styles.moodTitle}>How do you feel?</Text>
-                <View style={styles.moodRow}>
-                  {MOOD_OPTIONS.map((m) => {
-                    const isSelected = moodScore === m.score;
-                    return (
-                      <TouchableOpacity
-                        key={m.score}
-                        style={[
-                          styles.moodBtn,
-                          isSelected && styles.moodBtnSelected,
-                        ]}
-                        onPress={() => setMoodScore(m.score)}
-                        activeOpacity={0.7}
-                      >
-                        <View
-                          style={[
-                            styles.moodDot,
-                            { backgroundColor: m.color },
-                            isSelected && styles.moodDotSelected,
-                          ]}
-                        />
-                        <Text
-                          style={[
-                            styles.moodOptionLabel,
-                            isSelected && styles.moodOptionLabelSelected,
-                          ]}
-                        >
-                          {m.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
               <TagChips
                 selected={tags}
                 onChange={setTags}
@@ -361,7 +444,22 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // Mood selector
+  // Mood selector (top — primary interaction)
+  moodSectionTop: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  moodTitleTop: {
+    fontFamily: Fonts.serifBold,
+    fontSize: FontSizes.md,
+    color: Colors.earthBrown,
+    marginBottom: 10,
+  },
+  // Legacy (kept for compat if referenced elsewhere)
   moodSection: {
     paddingHorizontal: 20,
     paddingVertical: 16,
