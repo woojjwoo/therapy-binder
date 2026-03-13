@@ -2,11 +2,13 @@
  * Settings Screen
  * - Subscription status / paywall link
  * - Change passphrase (with full re-encryption)
- * - Daily reminders toggle + time picker
+ * - Daily reminders toggle + time picker + confirmation
  * - Export as JSON
  * - Generate Transition Report PDF (Pro-gated)
+ * - Export my data (Coming soon)
  * - Double-confirmed full data deletion
  * - Lock app
+ * - App version at bottom
  */
 
 import React, { useState, useEffect } from 'react';
@@ -24,7 +26,9 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
@@ -48,6 +52,8 @@ import {
 
 const REMINDER_ENABLED_KEY = 'tb_reminder_enabled';
 const REMINDER_TIME_KEY = 'tb_reminder_time';
+
+const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 // ─── Change Passphrase Modal ──────────────────────────────────────────────────
 
@@ -170,14 +176,22 @@ function SettingsScreenInner() {
   const masterKey = useAuthStore((s) => s.masterKey);
   const removeAll = useSessionStore((s) => s.removeAll);
   const { isPro, canExportPDF, sessionCount } = useEntitlement();
+  const activateLicense = useSubscription((s) => s.activateLicense);
   const [showChangePass, setShowChangePass] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
+  const enableDevPro = async () => {
+    const devKey = 'e139cf92-8569-413a-bac7-89767879fc5c';
+    await activateLicense(devKey);
+    Alert.alert('✅ Dev Pro Enabled', 'All Pro features unlocked for testing.');
+  };
+
   // Reminders state
   const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderTime, setReminderTime] = useState(new Date(2000, 0, 1, 20, 0)); // default 8pm
+  const [reminderTime, setReminderTime] = useState(new Date(2000, 0, 1, 20, 0)); // default 8 PM
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [reminderConfirm, setReminderConfirm] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -186,10 +200,21 @@ function SettingsScreenInner() {
       if (enabled === 'true') setReminderEnabled(true);
       if (time) {
         const [h, m] = time.split(':').map(Number);
-        setReminderTime(new Date(2000, 0, 1, h, m));
+        const t = new Date(2000, 0, 1, h, m);
+        setReminderTime(t);
+        if (enabled === 'true') {
+          setReminderConfirm(formatReminderConfirm(t));
+        }
+      } else if (enabled === 'true') {
+        setReminderConfirm(formatReminderConfirm(new Date(2000, 0, 1, 20, 0)));
       }
     })();
   }, []);
+
+  function formatReminderConfirm(t: Date): string {
+    const label = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `✓ We'll remind you at ${label} every day`;
+  }
 
   const handleToggleReminder = async (value: boolean) => {
     if (value) {
@@ -200,22 +225,31 @@ function SettingsScreenInner() {
       }
       await scheduleDaily(reminderTime.getHours(), reminderTime.getMinutes());
       await AsyncStorage.setItem(REMINDER_ENABLED_KEY, 'true');
-      await AsyncStorage.setItem(REMINDER_TIME_KEY, `${reminderTime.getHours()}:${reminderTime.getMinutes()}`);
+      await AsyncStorage.setItem(
+        REMINDER_TIME_KEY,
+        `${reminderTime.getHours()}:${reminderTime.getMinutes()}`
+      );
       setReminderEnabled(true);
+      setReminderConfirm(formatReminderConfirm(reminderTime));
     } else {
       await cancelReminders();
       await AsyncStorage.setItem(REMINDER_ENABLED_KEY, 'false');
       setReminderEnabled(false);
+      setReminderConfirm('');
     }
   };
 
   const handleTimeChange = async (_: unknown, date?: Date) => {
-    setShowTimePicker(Platform.OS === 'ios');
+    if (Platform.OS === 'android') setShowTimePicker(false);
     if (!date) return;
     setReminderTime(date);
     if (reminderEnabled) {
       await scheduleDaily(date.getHours(), date.getMinutes());
-      await AsyncStorage.setItem(REMINDER_TIME_KEY, `${date.getHours()}:${date.getMinutes()}`);
+      await AsyncStorage.setItem(
+        REMINDER_TIME_KEY,
+        `${date.getHours()}:${date.getMinutes()}`
+      );
+      setReminderConfirm(formatReminderConfirm(date));
     }
   };
 
@@ -323,14 +357,20 @@ function SettingsScreenInner() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>SECURITY</Text>
           <TouchableOpacity style={styles.row} onPress={() => setShowChangePass(true)}>
-            <View>
-              <Text style={styles.rowLabel}>Change Passphrase</Text>
-              <Text style={styles.rowSub}>Re-encrypts all sessions</Text>
+            <View style={styles.rowLeft}>
+              <Ionicons name="key-outline" size={18} color={Colors.barkBrown} style={styles.rowIcon} />
+              <View>
+                <Text style={styles.rowLabel}>Change Passphrase</Text>
+                <Text style={styles.rowSub}>Re-encrypts all sessions</Text>
+              </View>
             </View>
             <Text style={styles.chevron}>{'\u203A'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.row} onPress={lock}>
-            <Text style={styles.rowLabel}>Lock App</Text>
+            <View style={styles.rowLeft}>
+              <Ionicons name="lock-closed-outline" size={18} color={Colors.barkBrown} style={styles.rowIcon} />
+              <Text style={styles.rowLabel}>Lock App</Text>
+            </View>
             <Text style={styles.chevron}>{'\u203A'}</Text>
           </TouchableOpacity>
         </View>
@@ -339,7 +379,10 @@ function SettingsScreenInner() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>REMINDERS</Text>
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>Daily reminder</Text>
+            <View style={styles.rowLeft}>
+              <Ionicons name="notifications-outline" size={18} color={Colors.barkBrown} style={styles.rowIcon} />
+              <Text style={styles.rowLabel}>Daily reminder</Text>
+            </View>
             <Switch
               value={reminderEnabled}
               onValueChange={handleToggleReminder}
@@ -352,11 +395,14 @@ function SettingsScreenInner() {
               style={styles.row}
               onPress={() => setShowTimePicker(true)}
             >
-              <Text style={styles.rowLabel}>Reminder time</Text>
-              <Text style={styles.rowSub}>{timeLabel}</Text>
+              <View style={styles.rowLeft}>
+                <Ionicons name="time-outline" size={18} color={Colors.barkBrown} style={styles.rowIcon} />
+                <Text style={styles.rowLabel}>Reminder time</Text>
+              </View>
+              <Text style={styles.rowValue}>{timeLabel}</Text>
             </TouchableOpacity>
           )}
-          {showTimePicker && (
+          {reminderEnabled && showTimePicker && (
             <DateTimePicker
               value={reminderTime}
               mode="time"
@@ -364,9 +410,15 @@ function SettingsScreenInner() {
               onChange={handleTimeChange}
             />
           )}
+          {/* Confirmation message */}
+          {reminderConfirm !== '' && (
+            <View style={styles.confirmBanner}>
+              <Text style={styles.confirmText}>{reminderConfirm}</Text>
+            </View>
+          )}
         </View>
 
-        {/* Data */}
+        {/* Data / Export */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>YOUR DATA</Text>
           <TouchableOpacity
@@ -374,9 +426,12 @@ function SettingsScreenInner() {
             onPress={handleExportJSON}
             disabled={exporting}
           >
-            <View>
-              <Text style={styles.rowLabel}>Export as JSON</Text>
-              <Text style={styles.rowSub}>Full decrypted backup</Text>
+            <View style={styles.rowLeft}>
+              <Ionicons name="download-outline" size={18} color={Colors.barkBrown} style={styles.rowIcon} />
+              <View>
+                <Text style={styles.rowLabel}>Export as JSON</Text>
+                <Text style={styles.rowSub}>Full decrypted backup</Text>
+              </View>
             </View>
             {exporting ? (
               <ActivityIndicator color={Colors.earthBrown} />
@@ -389,11 +444,14 @@ function SettingsScreenInner() {
             onPress={handleExportPDF}
             disabled={exporting}
           >
-            <View>
-              <Text style={styles.rowLabel}>
-                Transition Report (PDF){!canExportPDF ? ' \uD83D\uDD12' : ''}
-              </Text>
-              <Text style={styles.rowSub}>Generated on-device {'\u00B7'} never sent to server</Text>
+            <View style={styles.rowLeft}>
+              <Ionicons name="document-text-outline" size={18} color={Colors.barkBrown} style={styles.rowIcon} />
+              <View>
+                <Text style={styles.rowLabel}>
+                  Transition Report (PDF){!canExportPDF ? ' 🔒' : ''}
+                </Text>
+                <Text style={styles.rowSub}>Generated on-device · never sent to server</Text>
+              </View>
             </View>
             {exporting ? (
               <ActivityIndicator color={Colors.earthBrown} />
@@ -401,19 +459,36 @@ function SettingsScreenInner() {
               <Text style={styles.chevron}>{'\u203A'}</Text>
             )}
           </TouchableOpacity>
+          {/* Coming soon export option */}
+          <View style={[styles.row, styles.rowDisabled]}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="share-outline" size={18} color={Colors.barkBrown + '80'} style={styles.rowIcon} />
+              <View>
+                <Text style={[styles.rowLabel, styles.textMuted]}>Export my data</Text>
+                <Text style={styles.rowSub}>Cloud backup · Coming soon</Text>
+              </View>
+            </View>
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonText}>Soon</Text>
+            </View>
+          </View>
         </View>
 
         {/* Danger zone */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>DANGER ZONE</Text>
           <TouchableOpacity style={styles.dangerRow} onPress={handleDeleteAll}>
+            <Ionicons name="trash-outline" size={18} color={Colors.terracotta} style={{ marginRight: 8 }} />
             <Text style={styles.dangerText}>Delete All Data</Text>
           </TouchableOpacity>
         </View>
 
         <Text style={styles.trustNote}>
-          Your data is yours {'\u2014'} always. You can export everything regardless of subscription status.
+          Your data is yours — always. You can export everything regardless of subscription status.
         </Text>
+
+        {/* App version */}
+        <Text style={styles.versionNote}>Version {APP_VERSION}</Text>
       </ScrollView>
 
       <ChangePassphraseModal
@@ -421,6 +496,16 @@ function SettingsScreenInner() {
         onClose={() => setShowChangePass(false)}
       />
       <UpgradeModal visible={showUpgrade} onClose={() => setShowUpgrade(false)} />
+
+      {/* DEV ONLY: quick Pro toggle for testing */}
+      {!isPro && __DEV__ && (
+        <TouchableOpacity
+          onPress={enableDevPro}
+          style={{ padding: 16, alignItems: 'center', opacity: 0.4 }}
+        >
+          <Text style={{ fontSize: 11, color: '#999' }}>⚙️ [DEV] Enable Pro</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -476,6 +561,17 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
+  rowDisabled: {
+    opacity: 0.65,
+  },
+  rowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  rowIcon: {
+    marginRight: 10,
+  },
   rowLabel: {
     fontFamily: Fonts.sans,
     fontSize: FontSizes.md,
@@ -486,6 +582,14 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.barkBrown,
     marginTop: 2,
+  },
+  rowValue: {
+    fontFamily: Fonts.sansMedium,
+    fontSize: FontSizes.sm,
+    color: Colors.earthBrown,
+  },
+  textMuted: {
+    color: Colors.barkBrown,
   },
   chevron: {
     fontFamily: Fonts.sans,
@@ -536,7 +640,9 @@ const styles = StyleSheet.create({
   dangerRow: {
     paddingHorizontal: 16,
     paddingVertical: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   dangerText: {
     fontFamily: Fonts.sansBold,
@@ -551,8 +657,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     lineHeight: 18,
     marginTop: 8,
+    marginBottom: 4,
   },
-
+  versionNote: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.xs,
+    color: Colors.barkBrown + '60',
+    textAlign: 'center',
+    paddingBottom: 20,
+    marginTop: 2,
+  },
+  // Reminder confirmation
+  confirmBanner: {
+    marginHorizontal: 16,
+    marginBottom: 14,
+    marginTop: 2,
+    backgroundColor: Colors.sage + '20',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.sage,
+  },
+  confirmText: {
+    fontFamily: Fonts.sansMedium,
+    fontSize: FontSizes.sm,
+    color: Colors.earthBrown,
+  },
+  // Coming soon badge
+  comingSoonBadge: {
+    backgroundColor: Colors.creamDark,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  comingSoonText: {
+    fontFamily: Fonts.sansMedium,
+    fontSize: FontSizes.xs,
+    color: Colors.barkBrown,
+  },
   // Modal
   modal: { flex: 1, backgroundColor: Colors.cream },
   modalContent: { padding: 24, paddingTop: 40, gap: 20 },
