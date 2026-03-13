@@ -50,6 +50,7 @@ import {
   scheduleDaily,
   cancelReminders,
 } from '../../src/hooks/useNotifications';
+import { usePrivacyScreen } from '../../src/hooks/usePrivacyScreen';
 
 const REMINDER_ENABLED_KEY = 'tb_reminder_enabled';
 const REMINDER_TIME_KEY = 'tb_reminder_time';
@@ -354,6 +355,9 @@ function SettingsScreenInner() {
           )}
         </View>
 
+        {/* Privacy Display — Samsung only */}
+        <PrivacyDisplaySection />
+
         {/* Security */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>SECURITY</Text>
@@ -545,6 +549,45 @@ function SettingsScreenInner() {
           <Text style={{ fontSize: 11, color: '#999' }}>⚙️ [DEV] Enable Pro</Text>
         </TouchableOpacity>
       )}
+    </View>
+  );
+}
+
+function PrivacyDisplaySection() {
+  const { isSupported, isEnabled, toggle, error, loading } = usePrivacyScreen();
+
+  if (loading || !isSupported) return null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>PRIVACY DISPLAY</Text>
+      {error === 'Permission required' && (
+        <TouchableOpacity
+          style={styles.confirmBanner}
+          onPress={toggle}
+        >
+          <Text style={styles.confirmText}>
+            Tap to grant permission in System Settings
+          </Text>
+        </TouchableOpacity>
+      )}
+      <View style={styles.row}>
+        <View style={styles.rowLeft}>
+          <Ionicons name="eye-off-outline" size={18} color={Colors.barkBrown} style={styles.rowIcon} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowLabel}>Privacy Screen</Text>
+            <Text style={styles.rowSub}>
+              Makes display unreadable from side angles (Samsung Galaxy only)
+            </Text>
+          </View>
+        </View>
+        <Switch
+          value={isEnabled}
+          onValueChange={toggle}
+          trackColor={{ true: Colors.sage }}
+          thumbColor={Colors.white}
+        />
+      </View>
     </View>
   );
 }

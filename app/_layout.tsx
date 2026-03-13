@@ -22,6 +22,8 @@ import { useSubscription } from '../src/stores/subscription-store';
 import { Colors } from '../src/theme/colors';
 import { scheduleDaily } from '../src/hooks/useNotifications';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { useSettingsStore } from '../src/stores/settings-store';
+import PrivacyScreen from '../modules/privacy-screen';
 
 const AUTO_LOCK_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -63,6 +65,12 @@ export default function RootLayout() {
           lock();
         }
         backgroundedAt.current = null;
+
+        // Re-enable privacy screen on foreground if user preference is set
+        const { privacyScreenEnabled } = useSettingsStore.getState();
+        if (privacyScreenEnabled) {
+          PrivacyScreen.setEnabled(true).catch(() => {});
+        }
       }
     });
     return () => sub.remove();
