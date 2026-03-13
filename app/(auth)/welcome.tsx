@@ -32,7 +32,7 @@ export default function WelcomeScreen() {
 
         <Pressable
           style={s.btn}
-          onPress={() => router.push('/(auth)/create-passphrase')}
+          onPress={() => router.push('/(auth)/setup-biometrics')}
         >
           <Text style={s.btnText}>Get Started</Text>
         </Pressable>

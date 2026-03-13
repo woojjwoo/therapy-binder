@@ -25,6 +25,7 @@ export default function SetupBiometricsScreen() {
   const [biometricType, setBiometricType] = useState<'faceid' | 'touchid' | 'passcode' | 'none'>('none');
   const [loading, setLoading] = useState(false);
   const setOnboarding = useAuthStore(s => s.setOnboarding);
+  const completeOnboarding = useAuthStore(s => s.completeOnboarding);
   const unlock = useAuthStore(s => s.unlock);
 
   useEffect(() => {
@@ -38,7 +39,8 @@ export default function SetupBiometricsScreen() {
       const { key } = await generateAndStoreKey();
       unlock(key);
       setOnboarding({ saltHex: '', mnemonic: '' });
-      router.push('/(auth)/recovery-key');
+      await completeOnboarding('');
+      router.replace('/(main)/');
     } catch (e: any) {
       if (e?.message?.includes('cancel') || e?.message?.includes('dismiss')) {
         Alert.alert('Cancelled', 'Authentication was cancelled. Please try again.');
