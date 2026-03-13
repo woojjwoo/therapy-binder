@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, SafeAreaView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
@@ -10,13 +10,14 @@ export default function ConfirmRecoveryScreen() {
   const onboarding = useAuthStore((s) => s.onboarding);
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
 
-  // Guard: if onboarding state is missing, go back to setup
-  if (!onboarding?.mnemonic) {
-    router.replace('/(auth)/create-passphrase');
-    return null;
-  }
+  useEffect(() => {
+    if (!onboarding?.mnemonic) {
+      router.replace('/(auth)/create-passphrase');
+    }
+  }, []);
 
-  const { mnemonic, saltHex } = onboarding;
+  const mnemonic = onboarding?.mnemonic ?? '';
+  const saltHex = onboarding?.saltHex ?? '';
   const words = mnemonicToWords(mnemonic);
 
   const challengeIndices = useMemo(() => pickChallengeIndices(), []);
