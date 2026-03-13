@@ -4,15 +4,18 @@
 
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../theme/colors';
 import { Fonts, FontSizes } from '../../theme/typography';
 import type { BlockType } from '../../models/block';
 
-const BLOCK_BUTTONS: { type: Exclude<BlockType, 'insight'>; icon: string; label: string }[] = [
-  { type: 'voice',  icon: '🎙', label: 'Voice'  },
-  { type: 'text',   icon: '📝', label: 'Notes'  },
-  { type: 'action', icon: '✅', label: 'Action' },
-  { type: 'image',  icon: '📷', label: 'Photo'  },
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
+const BLOCK_BUTTONS: { type: Exclude<BlockType, 'insight'>; icon: IoniconsName; label: string }[] = [
+  { type: 'voice',  icon: 'mic-outline',      label: 'Voice'  },
+  { type: 'text',   icon: 'document-text-outline', label: 'Notes'  },
+  { type: 'action', icon: 'checkmark-circle-outline', label: 'Action' },
+  { type: 'image',  icon: 'camera-outline',   label: 'Photo'  },
 ];
 
 interface Props {
@@ -29,7 +32,7 @@ export function AddBlockBar({ onAdd }: Props) {
           onPress={() => onAdd(type)}
           activeOpacity={0.7}
         >
-          <Text style={styles.icon}>{icon}</Text>
+          <Ionicons name={icon} size={24} color={Colors.barkBrown} />
           <Text style={styles.label}>{label}</Text>
         </TouchableOpacity>
       ))}
@@ -54,9 +57,6 @@ const styles = StyleSheet.create({
     gap: 4,
     padding: 8,
     borderRadius: 10,
-  },
-  icon: {
-    fontSize: 22,
   },
   label: {
     fontFamily: Fonts.sans,
