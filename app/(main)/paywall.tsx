@@ -9,13 +9,16 @@ import {
   ScrollView,
   Linking,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useSubscription } from '../../src/stores/subscription-store';
 
+const CHECKOUT_BASE = 'https://therapy-binder-k7hbcj927-brians-projects-bbc5c312.vercel.app/checkout';
+
 const FEATURES = [
-  { icon: '\u221E', label: 'Unlimited sessions', desc: 'No 5-session cap' },
+  { icon: '\u221E', label: 'Unlimited sessions', desc: 'No 10-session cap' },
   { icon: '\uD83D\uDCC8', label: 'Mood trends', desc: 'Weekly & monthly mood visualization' },
   { icon: '\uD83D\uDCC4', label: 'Export sessions', desc: 'Share as plain text' },
   { icon: '\uD83C\uDFF7\uFE0F', label: 'Custom tags', desc: 'Organize with your own categories' },
@@ -80,25 +83,44 @@ export default function PaywallScreen() {
         ))}
       </View>
 
-      {/* Pricing */}
+      {/* Privacy trust block */}
       {!isPro && (
-        <View style={styles.pricingRow}>
-          <View style={styles.priceCard}>
-            <Text style={styles.priceAmount}>$9.99</Text>
-            <Text style={styles.pricePeriod}>/ month</Text>
+        <View style={styles.privacyBlock}>
+          <Ionicons name="lock-closed" size={18} color={Colors.sage} style={styles.privacyIcon} />
+          <View style={styles.privacyText}>
+            <Text style={styles.privacyTitle}>Your data never leaves your device</Text>
+            <Text style={styles.privacyDesc}>
+              All sessions are encrypted with your passphrase.{'\n'}Not even we can read them.
+            </Text>
           </View>
-          <View style={[styles.priceCard, styles.priceCardHighlight]}>
-            <Text style={[styles.priceAmount, styles.priceHighlight]}>$59.99</Text>
-            <Text style={[styles.pricePeriod, styles.priceHighlight]}>/ year</Text>
-            <Text style={styles.saveBadge}>Save 50%</Text>
-          </View>
+        </View>
+      )}
+
+      {/* Checkout CTA buttons */}
+      {!isPro && (
+        <View style={styles.ctaSection}>
+          <TouchableOpacity
+            style={styles.ctaMonthly}
+            onPress={() => Linking.openURL(`${CHECKOUT_BASE}?plan=monthly`)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.ctaMonthlyText}>Get Pro — $9.99/mo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.ctaAnnual}
+            onPress={() => Linking.openURL(`${CHECKOUT_BASE}?plan=annual`)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.ctaAnnualText}>Best value — $59.99/yr</Text>
+            <Text style={styles.ctaAnnualSub}>Save 30%</Text>
+          </TouchableOpacity>
         </View>
       )}
 
       {/* License input */}
       {!isPro ? (
         <View style={styles.licenseSection}>
-          <Text style={styles.licenseLabel}>Enter license key</Text>
+          <Text style={styles.licenseLabel}>Already have a key? Enter it below.</Text>
           <TextInput
             style={styles.licenseInput}
             value={key}
@@ -116,13 +138,6 @@ export default function PaywallScreen() {
             <Text style={styles.activateBtnText}>
               {activating ? 'Activating...' : 'Activate'}
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.linkBtn}
-            onPress={() => Linking.openURL('https://therapy-binder-k7hbcj927-brians-projects-bbc5c312.vercel.app')}
-          >
-            <Text style={styles.linkText}>Get your license key →</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -184,8 +199,63 @@ const styles = StyleSheet.create({
   activateBtnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
   btnDim: { opacity: 0.5 },
 
-  linkBtn: { alignItems: 'center', paddingVertical: 12 },
-  linkText: { fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.sage, textDecorationLine: 'underline' },
+  // Privacy trust block
+  privacyBlock: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.sage + '18',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 20,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: Colors.sage + '40',
+  },
+  privacyIcon: { marginTop: 2 },
+  privacyText: { flex: 1 },
+  privacyTitle: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.sm,
+    color: Colors.earthBrown,
+    marginBottom: 3,
+  },
+  privacyDesc: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.xs,
+    color: Colors.barkBrown,
+    lineHeight: 18,
+  },
+
+  // Checkout CTA
+  ctaSection: { gap: 10, marginBottom: 24 },
+  ctaMonthly: {
+    backgroundColor: Colors.earthBrown,
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  ctaMonthlyText: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.md,
+    color: Colors.white,
+  },
+  ctaAnnual: {
+    backgroundColor: Colors.accent,
+    paddingVertical: 14,
+    borderRadius: 30,
+    alignItems: 'center',
+    gap: 2,
+  },
+  ctaAnnualText: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.md,
+    color: Colors.white,
+  },
+  ctaAnnualSub: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.xs,
+    color: Colors.white + 'CC',
+  },
 
   deactivateBtn: { alignItems: 'center', paddingVertical: 16, marginTop: 20 },
   deactivateText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.terracotta },

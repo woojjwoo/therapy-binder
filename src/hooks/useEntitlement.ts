@@ -1,7 +1,7 @@
 import { useSubscription } from '../stores/subscription-store';
 import { useSessionStore } from '../stores/session-store';
 
-export const FREE_SESSION_LIMIT = 5;
+export const FREE_SESSION_LIMIT = 10;
 
 export function useEntitlement() {
   const isPro = useSubscription((s) => s.isPro);

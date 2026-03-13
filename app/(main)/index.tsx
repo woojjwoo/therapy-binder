@@ -22,6 +22,7 @@ import { useAuthStore } from '../../src/stores/auth-store';
 import { useSessionStore, type SessionCard } from '../../src/stores/session-store';
 import { EmptyState } from '../../src/components/ui/EmptyState';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
+import { SampleSessionCards } from '../../src/components/SampleSessionCard';
 
 type SessionSection = {
   title: string;
@@ -176,13 +177,18 @@ function TimelineScreenInner() {
             <Text style={styles.emptyText}>No matching sessions.</Text>
           </View>
         ) : (
-          <EmptyState
-            icon={'book-outline'}
-            title="Your therapy journey starts here"
-            message="Log your first session after therapy to start tracking your progress and patterns."
-            actionLabel="Log Your First Session"
-            onAction={() => router.push('/new-session')}
-          />
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyHeading}>Your therapy journey starts here</Text>
+            <Text style={styles.emptySubtext}>Here's what your sessions will look like:</Text>
+            <SampleSessionCards />
+            <TouchableOpacity
+              style={styles.firstSessionBtn}
+              onPress={() => router.push('/new-session')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.firstSessionBtnText}>Add your first session →</Text>
+            </TouchableOpacity>
+          </View>
         )
       ) : (
         <SectionList
@@ -337,5 +343,37 @@ const styles = StyleSheet.create({
     color: Colors.barkBrown,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  emptyContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 40,
+  },
+  emptyHeading: {
+    fontFamily: Fonts.serifBold,
+    fontSize: FontSizes.lg,
+    color: Colors.earthBrown,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  emptySubtext: {
+    fontFamily: Fonts.sans,
+    fontSize: FontSizes.sm,
+    color: Colors.barkBrown,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  firstSessionBtn: {
+    backgroundColor: Colors.earthBrown,
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  firstSessionBtnText: {
+    fontFamily: Fonts.sansBold,
+    fontSize: FontSizes.md,
+    color: Colors.white,
   },
 });

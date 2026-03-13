@@ -344,7 +344,7 @@ function SettingsScreenInner() {
             >
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowLabel}>Free Plan</Text>
-                <Text style={styles.rowSub}>{sessionCount}/5 sessions used</Text>
+                <Text style={styles.rowSub}>{sessionCount}/10 sessions used</Text>
               </View>
               <View style={styles.upgradeChip}>
                 <Text style={styles.upgradeChipText}>Upgrade</Text>

@@ -69,6 +69,7 @@ export default function EditSessionScreen() {
   useEffect(() => {
     if (masterKey && id) loadSession(id, masterKey);
     return () => clearCurrent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, masterKey]);
 
   // Populate form once session loads
@@ -98,6 +99,8 @@ export default function EditSessionScreen() {
       return;
     }
     dirtyRef.current = true;
+    // loaded is intentionally excluded — changes to it should not trigger dirty
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insight, blocks, moodScore, tags]);
 
   // ─── Add block ──────────────────────────────────────────────────────────────

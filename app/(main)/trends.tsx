@@ -14,7 +14,9 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { router } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
+import { EmptyState } from '../../src/components/ui/EmptyState';
 import Svg, { Rect, Text as SvgText, Line } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -154,9 +156,13 @@ function TrendsScreenInner() {
           {/* Bar chart */}
           {chartData.length === 0 ? (
             <View style={styles.emptyChart}>
-              <Text style={styles.emptyText}>
-                No sessions in the last {viewMode === 'weekly' ? '7' : '30'} days
-              </Text>
+              <EmptyState
+                icon="bar-chart-outline"
+                title="No mood data yet"
+                message={`Log sessions to see your mood chart for the last ${viewMode === 'weekly' ? '7' : '30'} days.`}
+                actionLabel="Log a Session"
+                onAction={() => router.push('/new-session')}
+              />
             </View>
           ) : (
             <MoodBarChart data={chartData} />
