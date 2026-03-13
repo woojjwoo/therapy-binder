@@ -109,6 +109,21 @@ export default function SessionDetailScreen() {
     ]);
   };
 
+  if (!masterKey) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="lock-closed-outline" size={40} color={Colors.earthBrown} />
+        <Text style={[styles.error, { marginTop: 12 }]}>Vault is locked.</Text>
+        <TouchableOpacity onPress={() => router.replace('/(auth)/unlock')} style={styles.unlockBtn}>
+          <Text style={styles.unlockBtnText}>Unlock to view</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
+          <Text style={styles.back}>{'\u2039'} Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   if (loading) {
     return <View style={styles.center}><ActivityIndicator color={Colors.earthBrown} /></View>;
   }
@@ -116,7 +131,8 @@ export default function SessionDetailScreen() {
   if (!session) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>Session not found or could not be decrypted.</Text>
+        <Ionicons name="alert-circle-outline" size={40} color={Colors.earthBrown} />
+        <Text style={[styles.error, { marginTop: 12 }]}>Session not found.</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
           <Text style={styles.back}>{'\u2039'} Back</Text>
         </TouchableOpacity>
@@ -266,7 +282,15 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.cream },
   content: { paddingBottom: 60 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.cream },
-  error: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.barkBrown },
+  error: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.barkBrown, textAlign: 'center' },
+  unlockBtn: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: Colors.earthBrown,
+    borderRadius: 12,
+  },
+  unlockBtnText: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.cream, fontWeight: '700' },
 
   moodBanner: {
     paddingTop: 60,
