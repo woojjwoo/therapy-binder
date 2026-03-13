@@ -120,9 +120,9 @@ export default function PaywallScreen() {
 
           <TouchableOpacity
             style={styles.linkBtn}
-            onPress={() => Linking.openURL('https://therapybinder.app')}
+            onPress={() => Linking.openURL('https://therapy-binder-k7hbcj927-brians-projects-bbc5c312.vercel.app')}
           >
-            <Text style={styles.linkText}>Get a license at therapybinder.app</Text>
+            <Text style={styles.linkText}>Get your license key →</Text>
           </TouchableOpacity>
         </View>
       ) : (

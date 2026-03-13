@@ -26,7 +26,7 @@ interface Props {
 
 export function UpgradeModal({ visible, onClose }: Props) {
   const handlePurchase = () => {
-    Linking.openURL('https://therapybinder.app');
+    Linking.openURL('https://therapy-binder-k7hbcj927-brians-projects-bbc5c312.vercel.app');
   };
 
   return (
