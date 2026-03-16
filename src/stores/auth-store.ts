@@ -57,6 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     await setMeta(METADATA_KEYS.SCHEMA_VERSION, '1');
+    await setMeta(METADATA_KEYS.ONBOARDING_COMPLETE, 'true');
     set({ onboardingComplete: true, onboarding: null });
   },
 

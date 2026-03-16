@@ -48,4 +48,5 @@ export const METADATA_KEYS = {
   SALT: 'kdf_salt',
   SCHEMA_VERSION: 'schema_version',
   TRIAL_START: 'trial_start_at',
+  ONBOARDING_COMPLETE: 'onboarding_complete',
 } as const;

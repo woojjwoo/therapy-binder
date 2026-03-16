@@ -66,7 +66,7 @@ export default function SetupBiometricsScreen() {
           <View style={s.infoRow}><Text style={s.bullet}>•</Text><Text style={s.infoText}>A unique encryption key is generated for your device</Text></View>
           <View style={s.infoRow}><Text style={s.bullet}>•</Text><Text style={s.infoText}>It's stored in your phone's secure enclave — not in our servers</Text></View>
           <View style={s.infoRow}><Text style={s.bullet}>•</Text><Text style={s.infoText}>Only Face ID / passcode can access it</Text></View>
-          <View style={s.infoRow}><Text style={s.bullet}>•</Text><Text style={s.infoText}>You'll get a 24-word recovery key for backup</Text></View>
+          <View style={s.infoRow}><Text style={s.bullet}>•</Text><Text style={s.infoText}>If you lose access to this device, your encrypted data cannot be recovered — back up your device regularly</Text></View>
         </View>
 
         <Pressable

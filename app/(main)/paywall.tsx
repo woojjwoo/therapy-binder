@@ -7,15 +7,12 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
-  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useSubscription } from '../../src/stores/subscription-store';
-
-const CHECKOUT_BASE = 'https://therapy-binder-k7hbcj927-brians-projects-bbc5c312.vercel.app/checkout';
 
 const FEATURES = [
   { icon: '\u221E', label: 'Unlimited sessions', desc: 'No 10-session cap' },
@@ -37,7 +34,7 @@ export default function PaywallScreen() {
     if (ok) {
       Alert.alert('Welcome to Pro!', 'All features are now unlocked.');
     } else {
-      Alert.alert('Invalid key', 'Please enter a valid license key (UUID format).');
+      Alert.alert('Invalid key', 'This license key could not be verified. Please check the key and try again, or visit therapybinder.app for support.');
     }
   };
 
@@ -107,31 +104,10 @@ export default function PaywallScreen() {
         </View>
       )}
 
-      {/* Checkout CTA buttons */}
-      {!isPro && (
-        <View style={styles.ctaSection}>
-          <TouchableOpacity
-            style={styles.ctaMonthly}
-            onPress={() => Linking.openURL(`${CHECKOUT_BASE}?plan=monthly`)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.ctaMonthlyText}>Get Pro — $9.99/mo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.ctaAnnual}
-            onPress={() => Linking.openURL(`${CHECKOUT_BASE}?plan=annual`)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.ctaAnnualText}>Best value — $59.99/yr</Text>
-            <Text style={styles.ctaAnnualSub}>Save 30%</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       {/* License input */}
       {!isPro ? (
         <View style={styles.licenseSection}>
-          <Text style={styles.licenseLabel}>Already have a key? Enter it below.</Text>
+          <Text style={styles.licenseLabel}>Purchase a license at therapybinder.app, then enter your key below.</Text>
           <TextInput
             style={styles.licenseInput}
             value={key}
@@ -286,37 +262,6 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     color: Colors.barkBrown,
     lineHeight: 18,
-  },
-
-  // Checkout CTA
-  ctaSection: { gap: 10, marginBottom: 24 },
-  ctaMonthly: {
-    backgroundColor: Colors.earthBrown,
-    paddingVertical: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-  },
-  ctaMonthlyText: {
-    fontFamily: Fonts.sansBold,
-    fontSize: FontSizes.md,
-    color: Colors.white,
-  },
-  ctaAnnual: {
-    backgroundColor: Colors.accent,
-    paddingVertical: 14,
-    borderRadius: 30,
-    alignItems: 'center',
-    gap: 2,
-  },
-  ctaAnnualText: {
-    fontFamily: Fonts.sansBold,
-    fontSize: FontSizes.md,
-    color: Colors.white,
-  },
-  ctaAnnualSub: {
-    fontFamily: Fonts.sans,
-    fontSize: FontSizes.xs,
-    color: Colors.white + 'CC',
   },
 
   deactivateBtn: { alignItems: 'center', paddingVertical: 16, marginTop: 20 },
