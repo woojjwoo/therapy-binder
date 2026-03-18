@@ -51,6 +51,7 @@
       "expo-router",
       "expo-secure-store",
       "expo-notifications",
+      "expo-in-app-purchases",
       [
         "expo-build-properties",
         {

@@ -7,17 +7,14 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
-  Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useSubscription } from '../../src/stores/subscription-store';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://therapybinder.app';
-
-const MONTHLY_PRICE_ID = process.env.EXPO_PUBLIC_STRIPE_PRICE_MONTHLY ?? 'price_monthly';
-const ANNUAL_PRICE_ID = process.env.EXPO_PUBLIC_STRIPE_PRICE_ANNUAL ?? 'price_annual';
+import { useIAP } from '../../src/hooks/useIAP';
+import { PRODUCT_IDS, type ProductId } from '../../src/stores/iap-store';
 
 const FEATURES = [
   { icon: '∞', label: 'Unlimited sessions', desc: 'No 10-session cap' },
@@ -31,33 +28,75 @@ type Plan = 'monthly' | 'annual';
 
 export default function PaywallScreen() {
   const { isPro, activateLicense, deactivateLicense } = useSubscription();
+  const {
+    isAvailable,
+    loading: iapLoading,
+    purchasing,
+    restoring,
+    error: iapError,
+    monthlyProduct,
+    annualProduct,
+    purchase,
+    restore,
+  } = useIAP();
+
   const [selectedPlan, setSelectedPlan] = useState<Plan>('annual');
   const [key, setKey] = useState('');
   const [activating, setActivating] = useState(false);
-  const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [showKeyInput, setShowKeyInput] = useState(false);
 
+  // Derive display prices from StoreKit (fall back to hardcoded if not loaded yet)
+  const monthlyPrice = monthlyProduct?.price ?? '$9.99';
+  const annualPrice = annualProduct?.price ?? '$59.99';
+
   const handleGetPro = async () => {
-    setLoadingCheckout(true);
+    if (!isAvailable) {
+      Alert.alert(
+        'IAP not available in Expo Go',
+        'In-app purchases require a dev build or production build. Please use a dev build to test purchases.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    const productId: ProductId =
+      selectedPlan === 'annual' ? PRODUCT_IDS.annual : PRODUCT_IDS.monthly;
+
     try {
-      const priceId = selectedPlan === 'annual' ? ANNUAL_PRICE_ID : MONTHLY_PRICE_ID;
-      const res = await fetch(`${API_URL}/api/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
-      });
-      if (!res.ok) throw new Error('Failed to create checkout session');
-      const data = await res.json();
-      if (data.url) {
-        await Linking.openURL(data.url);
-      } else {
-        throw new Error('No checkout URL returned');
-      }
+      await purchase(productId);
+      // Purchase result is async — listener in iap-store will update subscription state
     } catch {
-      // Fallback: open website directly
-      await Linking.openURL(`${API_URL}?plan=${selectedPlan}`);
-    } finally {
-      setLoadingCheckout(false);
+      Alert.alert(
+        'Purchase failed',
+        'Something went wrong with your purchase. Please try again or contact support.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    if (!isAvailable) {
+      Alert.alert(
+        'IAP not available in Expo Go',
+        'Restore purchases requires a dev build or production build.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    const restored = await restore();
+    if (restored) {
+      Alert.alert('Purchases Restored', 'Welcome back to Pro! All features are now unlocked.');
+    } else if (!iapError) {
+      Alert.alert(
+        'No Purchases Found',
+        'We couldn\'t find any previous purchases for this Apple ID. If you believe this is an error, please contact support.'
+      );
+    } else {
+      Alert.alert(
+        'Restore Failed',
+        'We couldn\'t restore your purchases. Please check your internet connection and try again.'
+      );
     }
   };
 
@@ -86,6 +125,16 @@ export default function PaywallScreen() {
         },
       },
     ]);
+  };
+
+  // Determine CTA button label with real prices
+  const getCtaLabel = () => {
+    if (purchasing) return 'Processing...';
+    if (iapLoading) return 'Loading prices...';
+    if (selectedPlan === 'annual') {
+      return `Get Pro — ${annualPrice}/yr`;
+    }
+    return `Get Pro — ${monthlyPrice}/mo`;
   };
 
   return (
@@ -119,21 +168,40 @@ export default function PaywallScreen() {
 
       {!isPro && (
         <>
+          {/* Expo Go dev notice */}
+          {!isAvailable && (
+            <View style={styles.devNotice}>
+              <Text style={styles.devNoticeText}>
+                ⚠️ IAP not available in Expo Go — use a dev build to test purchases
+              </Text>
+            </View>
+          )}
+
           {/* Pricing toggle */}
           <View style={styles.pricingRow}>
+            {/* Monthly card */}
             <TouchableOpacity
               style={[styles.priceCard, selectedPlan === 'monthly' && styles.priceCardSelected]}
               onPress={() => setSelectedPlan('monthly')}
             >
-              <Text style={styles.priceAmount}>$9.99</Text>
+              {iapLoading ? (
+                <ActivityIndicator size="small" color={Colors.earthBrown} style={{ marginVertical: 6 }} />
+              ) : (
+                <Text style={styles.priceAmount}>{monthlyPrice}</Text>
+              )}
               <Text style={styles.pricePeriod}>per month</Text>
             </TouchableOpacity>
 
+            {/* Annual card */}
             <TouchableOpacity
               style={[styles.priceCard, selectedPlan === 'annual' && styles.priceCardSelected]}
               onPress={() => setSelectedPlan('annual')}
             >
-              <Text style={styles.priceAmount}>$59.99</Text>
+              {iapLoading ? (
+                <ActivityIndicator size="small" color={Colors.earthBrown} style={{ marginVertical: 6 }} />
+              ) : (
+                <Text style={styles.priceAmount}>{annualPrice}</Text>
+              )}
               <Text style={styles.pricePeriod}>per year</Text>
               <Text style={styles.saveBadge}>Save 50% ✦</Text>
             </TouchableOpacity>
@@ -159,26 +227,43 @@ export default function PaywallScreen() {
             <Text style={styles.privacyLineText}>🔒 100% private — we never see your sessions</Text>
           </View>
 
-          {/* Primary CTA */}
+          {/* Primary CTA — StoreKit purchase */}
           <TouchableOpacity
-            style={[styles.getProBtn, loadingCheckout && styles.btnDim]}
+            style={[styles.getProBtn, (purchasing || iapLoading) && styles.btnDim]}
             onPress={handleGetPro}
-            disabled={loadingCheckout}
+            disabled={purchasing || iapLoading}
           >
-            <Text style={styles.getProBtnText}>
-              {loadingCheckout
-                ? 'Opening checkout...'
-                : selectedPlan === 'annual'
-                ? 'Get Pro — $59.99/yr'
-                : 'Get Pro — $9.99/mo'}
-            </Text>
+            {purchasing ? (
+              <View style={styles.btnLoadingRow}>
+                <ActivityIndicator size="small" color={Colors.white} />
+                <Text style={[styles.getProBtnText, { marginLeft: 8 }]}>Processing...</Text>
+              </View>
+            ) : (
+              <Text style={styles.getProBtnText}>{getCtaLabel()}</Text>
+            )}
           </TouchableOpacity>
 
           <Text style={styles.checkoutNote}>
-            You'll be taken to a secure checkout. After payment, you'll receive a license key by email.
+            Payment processed securely by Apple. Subscriptions auto-renew unless cancelled.
           </Text>
 
-          {/* Already have a key */}
+          {/* Restore Purchases */}
+          <TouchableOpacity
+            style={[styles.restoreBtn, restoring && styles.btnDim]}
+            onPress={handleRestorePurchases}
+            disabled={restoring}
+          >
+            {restoring ? (
+              <View style={styles.btnLoadingRow}>
+                <ActivityIndicator size="small" color={Colors.earthBrown} />
+                <Text style={[styles.restoreBtnText, { marginLeft: 6 }]}>Restoring...</Text>
+              </View>
+            ) : (
+              <Text style={styles.restoreBtnText}>Restore Purchases</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Already have a license key (web purchase) */}
           <TouchableOpacity
             style={styles.alreadyHaveKeyBtn}
             onPress={() => setShowKeyInput((v) => !v)}
@@ -190,6 +275,9 @@ export default function PaywallScreen() {
 
           {showKeyInput && (
             <View style={styles.licenseSection}>
+              <Text style={styles.licenseNote}>
+                For users who purchased via therapybinder.app — enter your license key below.
+              </Text>
               <TextInput
                 style={styles.licenseInput}
                 value={key}
@@ -245,6 +333,14 @@ const styles = StyleSheet.create({
   featureDesc: { fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.barkBrown, marginTop: 2 },
   checkmark: { fontFamily: Fonts.sansBold, fontSize: FontSizes.lg, color: Colors.sage },
 
+  devNotice: {
+    backgroundColor: '#FFF3CD', borderRadius: 10, padding: 12, marginBottom: 16,
+    borderWidth: 1, borderColor: '#FBBF24',
+  },
+  devNoticeText: {
+    fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: '#92400E', textAlign: 'center',
+  },
+
   pricingRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   priceCard: {
     flex: 1, backgroundColor: Colors.white, borderRadius: 14, padding: 16, alignItems: 'center',
@@ -284,16 +380,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2, shadowRadius: 8, elevation: 3,
   },
   getProBtnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white, letterSpacing: 0.3 },
+  btnLoadingRow: { flexDirection: 'row', alignItems: 'center' },
 
   checkoutNote: {
     fontFamily: Fonts.sans, fontSize: FontSizes.xs, color: Colors.barkBrown,
-    textAlign: 'center', lineHeight: 18, marginBottom: 20, paddingHorizontal: 10,
+    textAlign: 'center', lineHeight: 18, marginBottom: 12, paddingHorizontal: 10,
+  },
+
+  restoreBtn: { alignItems: 'center', paddingVertical: 12, marginBottom: 16 },
+  restoreBtnText: {
+    fontFamily: Fonts.sansMedium, fontSize: FontSizes.sm, color: Colors.earthBrown,
+    textDecorationLine: 'underline',
   },
 
   alreadyHaveKeyBtn: { alignItems: 'center', marginBottom: 12 },
-  alreadyHaveKeyText: { fontFamily: Fonts.sansMedium, fontSize: FontSizes.sm, color: Colors.earthBrown },
+  alreadyHaveKeyText: { fontFamily: Fonts.sansMedium, fontSize: FontSizes.sm, color: Colors.barkBrown },
 
   licenseSection: { gap: 12, marginTop: 4 },
+  licenseNote: {
+    fontFamily: Fonts.sans, fontSize: FontSizes.xs, color: Colors.barkBrown,
+    textAlign: 'center', lineHeight: 18,
+  },
   licenseInput: {
     backgroundColor: Colors.white, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
     fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.earthBrown,
