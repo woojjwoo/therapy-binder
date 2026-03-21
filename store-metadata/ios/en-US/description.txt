@@ -1,5 +1,17 @@
-Your therapy journey deserves a safe, private space. The Therapy Binder keeps your session notes encrypted on your device with AES-256-GCM — the same standard trusted by governments and banks. Zero cloud storage. Zero tracking. Zero knowledge.
+Your therapy notes are yours alone. In a world where most apps quietly collect your data, The Therapy Binder takes a radically different approach: every word you write is encrypted on your device with keys only you control. There is no server. There is no cloud sync. There is no account to create. Your most personal reflections about anxiety, depression, trauma, and growth never leave your phone unless you choose to export them. This is not a marketing promise. It is the architecture.
 
-Write session notes, record voice memos, track your mood, and tag themes across sessions. Watch patterns emerge over time with mood trends and insight quotes. Everything stays on your iPhone, protected by your passphrase and Face ID.
+The Therapy Binder is a private therapy journal built from the ground up for people in therapy. Whether you are working through CBT exercises, processing a difficult session with your therapist, or simply trying to put your feelings into words, this app gives you a structured, secure space to do that work.
 
-Built for people in therapy who want to reflect between sessions without worrying about who might read their notes. Your words, your patterns, your privacy — no compromises.
+Each journal entry is organized into session blocks that mirror the way therapy actually works. You can add text notes to capture what your therapist said and what came up for you. Record voice memos when typing feels like too much. Attach images of worksheets, whiteboards, or anything your therapist shares. Tag each session with the date, your therapist's name, topics discussed, and homework assignments. Everything lives in one place, encrypted and protected, ready for your next appointment.
+
+Mood tracking is built into every entry. After each session or at any point during the day, log how you are feeling with a simple, intuitive interface. Over time, The Therapy Binder reveals patterns in your emotional life. You will start to see which weeks were harder, which interventions helped, and how your baseline shifts over months. Bring your mood data to your next session and watch the conversation go deeper.
+
+The Patterns and Insights screen gives you a visual summary of your journey. See mood trends, session frequency, recurring themes, and emotional shifts at a glance. Instead of trying to remember how you felt three weeks ago, you will have clear data to share with your therapist.
+
+Privacy is not a feature of The Therapy Binder. It is the foundation. The app uses end-to-end encryption with a recovery key that you set during setup. Your encryption keys are generated on your device and never transmitted anywhere. We have no analytics, no advertising, no tracking pixels, and no third-party SDKs collecting data behind the scenes. Biometric lock with Face ID or Touch ID ensures that even if someone picks up your phone, your journal stays sealed. Screenshot prevention keeps your entries from being captured accidentally or intentionally.
+
+When you need to share progress with your therapist or keep a personal backup, the PDF export feature puts you in control. Export a single session, a date range, or your full journal. You decide what gets shared and with whom.
+
+Whether you are in CBT, DBT, psychodynamic therapy, EMDR, talk therapy, or any other modality, The Therapy Binder adapts to your process. It is not a self-help app and it does not replace your therapist. It is a private, secure journaling app that helps you get more from every session.
+
+Your therapy is your business. Keep it that way.

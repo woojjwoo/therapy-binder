@@ -41,3 +41,6 @@ yarn-error.*
 /android
 .env
 .env.local
+
+# Google Play service account key (sensitive)
+google-play-service-account.json

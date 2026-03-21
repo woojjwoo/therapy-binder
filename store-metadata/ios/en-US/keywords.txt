@@ -1,1 +1,1 @@
-therapy,journal,mental health,private,encrypted,notes,journaling,CBT,mood tracker,secure
+therapy,journal,mental health,mood tracker,private notes,journaling,self care,CBT,anxiety,mindful

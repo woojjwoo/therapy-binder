@@ -1,0 +1,28 @@
+Your therapy notes are yours alone. The Therapy Binder encrypts every word you write on your device with AES-256-GCM — the same standard trusted by governments and banks. There is no server. There is no cloud sync. There is no account to create. Your most personal reflections never leave your phone unless you choose to export them.
+
+<b>Built for people in therapy</b>
+Whether you are working through CBT exercises, processing a difficult session, or putting your feelings into words, The Therapy Binder gives you a structured, secure space to do that work.
+
+<b>Session blocks that mirror real therapy</b>
+Each journal entry is organized into blocks: text notes to capture what your therapist said, voice memos when typing feels like too much, and image attachments for worksheets or whiteboards. Tag sessions with dates, therapist names, topics, and homework.
+
+<b>Mood tracking and pattern insights</b>
+Log how you are feeling after each session or any time during the day. Over time, see which weeks were harder, which interventions helped, and how your baseline shifts. Bring your mood data to your next session and watch the conversation go deeper.
+
+<b>Privacy is the foundation</b>
+• End-to-end encryption with your personal recovery key
+• Biometric lock with fingerprint or face unlock
+• No analytics, no advertising, no tracking
+• No third-party SDKs collecting data
+• Screenshot prevention keeps entries from being captured
+• App locks automatically when backgrounded
+
+<b>Export on your terms</b>
+Export a single session, a date range, or your full journal as a clean PDF. You decide what gets shared and with whom.
+
+<b>Daily reminders</b>
+Set a gentle daily nudge to check in with yourself. Consistency is one of the most powerful tools in therapy.
+
+Whether you are in CBT, DBT, psychodynamic therapy, EMDR, or talk therapy, The Therapy Binder adapts to your process. It is not a self-help app. It is a private, secure journal that helps you get more from every session.
+
+Your therapy is your business. Keep it that way.
