@@ -27,6 +27,9 @@ import { listSessions, decryptSession } from '../../src/storage/local';
 import { useEntitlement } from '../../src/hooks/useEntitlement';
 import { UpgradeModal } from '../../src/components/UpgradeModal';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
+import { SCREENSHOT_SEED_CARDS } from '../../src/stores/session-store';
+
+const SCREENSHOT_MODE = true;
 
 interface MoodPoint {
   id: string;
@@ -68,7 +71,12 @@ function TrendsScreenInner() {
 
   useFocusEffect(
     useCallback(() => {
-      load();
+      if (SCREENSHOT_MODE) {
+        setSessions(SCREENSHOT_SEED_CARDS.map(c => ({ id: c.id, moodScore: c.moodScore, createdAt: c.createdAt })));
+        setLoading(false);
+      } else {
+        load();
+      }
     }, [load])
   );
 
@@ -255,7 +263,7 @@ function MoodBarChart({ data }: { data: MoodPoint[] }) {
         })}
 
         {data.map((s, i) => {
-          const barH = Math.max(8, (s.moodScore / 10) * H);
+          const barH = Math.max(8, (Math.min(s.moodScore, 5) / 5) * H);
           const x = 8 + i * (barW + gap);
           const y = H - barH;
           const color = moodColor(s.moodScore);

@@ -28,6 +28,9 @@ import { listSessions, decryptSession } from '../../src/storage/local';
 import { EmptyState } from '../../src/components/ui/EmptyState';
 import { useEntitlement } from '../../src/hooks/useEntitlement';
 import type { Block } from '../../src/models/block';
+import { SCREENSHOT_SEED_CARDS } from '../../src/stores/session-store';
+
+const SCREENSHOT_MODE = true;
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 
 interface SessionData {
@@ -74,7 +77,7 @@ function EmotionalRiver({ sessions }: { sessions: SessionData[] }) {
       <Svg width={W} height={H + 30} viewBox={`0 0 ${W} ${H + 30}`}>
         <Line x1="0" y1={H} x2={W} y2={H} stroke={Colors.border} strokeWidth="1" />
         {recent.map((s, i) => {
-          const barH = Math.max(8, (s.moodScore / 10) * H);
+          const barH = Math.max(8, (Math.min(s.moodScore, 5) / 5) * H);
           const x = 8 + i * (barW + gap);
           const y = H - barH;
           const color = moodColor(s.moodScore);
@@ -236,7 +239,18 @@ function PatternsScreenInner() {
 
   useFocusEffect(
     useCallback(() => {
-      load();
+      if (SCREENSHOT_MODE) {
+        setSessions(SCREENSHOT_SEED_CARDS.map(c => ({
+          id: c.id,
+          moodScore: c.moodScore,
+          createdAt: c.createdAt,
+          insight: c.insight,
+          tags: c.tags,
+        })));
+        setLoading(false);
+      } else {
+        load();
+      }
     }, [load])
   );
 
