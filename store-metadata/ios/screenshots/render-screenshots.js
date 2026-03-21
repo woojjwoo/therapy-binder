@@ -14,8 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SIZES = {
-  'iphone-6.7': { w: 1290, h: 2796 },
-  'iphone-6.5': { w: 1284, h: 2778 },
+  'iphone-6.5': { w: 1242, h: 2688 },
 };
 
 const SCREENS = ['screen_1', 'screen_2', 'screen_3', 'screen_4', 'screen_5'];

@@ -5,10 +5,8 @@ const OUT = __dirname;
 
 // App Store Connect screenshot sizes
 const SIZES = {
-  // iPhone 6.7" (iPhone 15 Pro Max, 16 Pro Max) — required
-  'iphone-6.7': { w: 1290, h: 2796 },
-  // iPhone 6.5" (iPhone 11 Pro Max, XS Max) — required
-  'iphone-6.5': { w: 1284, h: 2778 },
+  // iPhone 6.5" (1242x2688) — required by App Store Connect
+  'iphone-6.5': { w: 1242, h: 2688 },
 };
 
 function makeHtml(title, headline, subtext, phoneContent, size, bg = 'linear-gradient(160deg,#1a2f27 0%,#2D4A3E 45%,#1e3830 100%)') {
