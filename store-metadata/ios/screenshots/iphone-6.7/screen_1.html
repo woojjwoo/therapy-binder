@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1290">
+<title>Therapy Binder – Screen 1</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1290px; height: 2796px;
+    background: linear-gradient(160deg, #1a2f27 0%, #2D4A3E 45%, #1e3830 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+  body::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(100, 200, 140, 0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(45, 74, 62, 0.4) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .layout { display: flex; flex-direction: column; align-items: center; gap: 80px; position: relative; z-index: 1; }
+  .headline { text-align: center; }
+  .headline h1 { font-size: 96px; font-weight: 700; color: #ffffff; letter-spacing: -2px; line-height: 1.05; text-shadow: 0 2px 40px rgba(0,0,0,0.3); }
+  .headline h1 em { font-style: normal; color: #7DCEA0; }
+  .headline p { font-size: 42px; color: rgba(255,255,255,0.65); margin-top: 20px; font-weight: 400; }
+  .phone {
+    width: 640px; height: 1340px;
+    background: #0d1a14; border-radius: 80px;
+    border: 10px solid #3a5a4e;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.06), 0 60px 120px rgba(0,0,0,0.7);
+    overflow: hidden; position: relative;
+  }
+  .dynamic-island { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 130px; height: 38px; background: #000; border-radius: 20px; z-index: 10; }
+  .screen {
+    width: 100%; height: 100%;
+    background: linear-gradient(180deg, #0f1f18 0%, #162b22 100%);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 90px 50px 60px; gap: 0;
+  }
+  .status-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; margin-bottom: 60px; }
+  .status-time { font-size: 24px; font-weight: 600; color: #fff; }
+  .status-icons { display: flex; gap: 12px; align-items: center; }
+  .status-icons svg { width: 22px; height: 22px; fill: #fff; opacity: 0.9; }
+  .logo-area { display: flex; flex-direction: column; align-items: center; flex: 1; justify-content: center; gap: 40px; }
+  .app-icon-wrapper {
+    width: 160px; height: 160px;
+    background: linear-gradient(135deg, #2D4A3E 0%, #3d6b59 100%);
+    border-radius: 36px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1);
+  }
+  .lock-icon { width: 80px; height: 80px; color: #7DCEA0; }
+  .app-name { font-size: 42px; font-weight: 700; color: #fff; }
+  .app-tagline { font-size: 22px; color: rgba(255,255,255,0.6); text-align: center; }
+  .privacy-tags { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+  .tag { background: rgba(125, 206, 160, 0.15); border: 1px solid rgba(125, 206, 160, 0.35); border-radius: 30px; padding: 10px 22px; font-size: 20px; color: #7DCEA0; font-weight: 500; }
+  .main-tagline { text-align: center; margin-top: 30px; }
+  .main-tagline .big { font-size: 34px; font-weight: 700; color: #fff; line-height: 1.2; }
+  .main-tagline .sub { font-size: 20px; color: rgba(255,255,255,0.5); margin-top: 10px; }
+  .cta-btn {
+    width: 100%; height: 80px;
+    background: linear-gradient(135deg, #4CAF87 0%, #2D7A5E 100%);
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700; color: #fff;
+    box-shadow: 0 4px 20px rgba(76, 175, 135, 0.35); margin-top: auto;
+  }
+  .bottom-badge {
+    display: flex; align-items: center; gap: 16px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 50px; padding: 18px 40px; margin-top: 20px;
+  }
+  .bottom-badge svg { width: 32px; height: 32px; fill: #7DCEA0; }
+  .bottom-badge span { font-size: 28px; color: rgba(255,255,255,0.8); font-weight: 500; }
+  .dots { position: absolute; top: 120px; right: -200px; width: 400px; height: 400px; opacity: 0.04; background-image: radial-gradient(circle, #fff 1.5px, transparent 1.5px); background-size: 24px 24px; border-radius: 50%; }
+  .dots2 { position: absolute; bottom: 200px; left: -180px; width: 350px; height: 350px; opacity: 0.04; background-image: radial-gradient(circle, #fff 1.5px, transparent 1.5px); background-size: 24px 24px; border-radius: 50%; }
+</style>
+</head>
+<body>
+  <div class="dots"></div>
+  <div class="dots2"></div>
+  <div class="layout">
+    <div class="headline">
+      <h1>Your Private<br><em>Therapy Journal</em></h1>
+      <p>A safe space that truly belongs to you</p>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="dynamic-island"></div>
+        <div class="screen">
+          <div class="status-bar">
+            <span class="status-time">9:41</span>
+            <div class="status-icons">
+              <svg viewBox="0 0 24 24"><rect x="1" y="14" width="3" height="7" rx="0.5"/><rect x="6" y="10" width="3" height="11" rx="0.5"/><rect x="11" y="6" width="3" height="15" rx="0.5"/><rect x="16" y="2" width="3" height="19" rx="0.5"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M12 18.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0-4a5 5 0 013.54 1.46l-1.42 1.42a3 3 0 00-4.24 0L8.46 15.96A5 5 0 0112 14.5zm0-4a9 9 0 016.36 2.64l-1.42 1.42A7 7 0 0012 12.5a7 7 0 00-4.95 2.06L5.63 13.14A9 9 0 0112 10.5zm0-4a13 13 0 019.19 3.81l-1.42 1.42A11 11 0 0012 8.5a11 11 0 00-7.78 3.23L2.81 10.31A13 13 0 0112 6.5z"/></svg>
+              <svg viewBox="0 0 28 14"><rect x="0" y="1" width="24" height="12" rx="3" stroke="#fff" stroke-width="1.5" fill="none"/><rect x="2" y="3" width="18" height="8" rx="1.5" fill="#fff"/><path d="M25.5 4.5v5a2 2 0 000-5z"/></svg>
+            </div>
+          </div>
+          <div class="logo-area">
+            <div class="app-icon-wrapper">
+              <svg class="lock-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="16" y="36" width="48" height="34" rx="8" fill="#7DCEA0" opacity="0.9"/>
+                <path d="M26 36V26a14 14 0 1128 0v10" stroke="#7DCEA0" stroke-width="5" stroke-linecap="round" fill="none"/>
+                <circle cx="40" cy="52" r="6" fill="#0f1f18"/>
+                <rect x="38" y="52" width="4" height="8" rx="2" fill="#0f1f18"/>
+              </svg>
+            </div>
+            <div style="text-align:center;">
+              <div class="app-name">Therapy Binder</div>
+              <div class="app-tagline">Private. Encrypted. Yours.</div>
+            </div>
+            <div class="privacy-tags">
+              <div class="tag">AES-256</div>
+              <div class="tag">Zero-Knowledge</div>
+              <div class="tag">No Tracking</div>
+            </div>
+            <div class="main-tagline">
+              <div class="big">Your thoughts stay<br>between you and you</div>
+              <div class="sub">End-to-end encrypted on your device</div>
+            </div>
+          </div>
+          <div class="cta-btn">Get Started Free</div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-badge">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4z"/></svg>
+      <span>Trusted by thousands in therapy</span>
+    </div>
+  </div>
+</body>
+</html>
