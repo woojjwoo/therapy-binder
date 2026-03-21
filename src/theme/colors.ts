@@ -39,8 +39,11 @@ export const Colors = {
  * Map a mood score (1–10) to its color.
  */
 export function moodColor(score: number): string {
-  if (score >= 8) return Colors.sage;
-  if (score >= 6) return Colors.sageLight;
-  if (score >= 4) return Colors.blush;
-  return Colors.terracotta;
+  // Supports both 1-5 scale (new session) and 1-10 scale (legacy)
+  // Normalize to 1-10 if score is 1-5
+  const s = score <= 5 ? score * 2 : score;
+  if (s >= 8) return Colors.sage;       // Great (5) → deep green
+  if (s >= 6) return Colors.sageLight;  // Good (4) → light green
+  if (s >= 4) return Colors.blush;      // Okay (3) → warm peach
+  return Colors.terracotta;             // Low/Rough (1-2) → red
 }
