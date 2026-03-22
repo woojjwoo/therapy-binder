@@ -23,7 +23,7 @@ import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useAuthStore } from '../../src/stores/auth-store';
 import { useSessionStore, type SessionCard, SCREENSHOT_SEED_CARDS } from '../../src/stores/session-store';
 
-const SCREENSHOT_MODE = true; // Set false before production build
+const SCREENSHOT_MODE = false; // Set false before production build
 import { EmptyState } from '../../src/components/ui/EmptyState';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 import { SampleSessionCards } from '../../src/components/SampleSessionCard';

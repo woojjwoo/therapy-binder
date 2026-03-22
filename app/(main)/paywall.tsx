@@ -7,14 +7,16 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
-  ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { Fonts, FontSizes } from '../../src/theme/typography';
 import { useSubscription } from '../../src/stores/subscription-store';
-import { useIAP } from '../../src/hooks/useIAP';
-import { PRODUCT_IDS, type ProductId } from '../../src/stores/iap-store';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://therapybinder.app';
+const MONTHLY_PRICE_ID = process.env.EXPO_PUBLIC_STRIPE_PRICE_MONTHLY ?? 'price_1TAM4BAxyDlv4WY34zt95CMu';
+const ANNUAL_PRICE_ID = process.env.EXPO_PUBLIC_STRIPE_PRICE_ANNUAL ?? 'price_1TAM55AxyDlv4WY3nZ9H7AI6';
 
 const FEATURES = [
   { icon: '∞', label: 'Unlimited sessions', desc: 'No 10-session cap' },
@@ -28,75 +30,32 @@ type Plan = 'monthly' | 'annual';
 
 export default function PaywallScreen() {
   const { isPro, activateLicense, deactivateLicense } = useSubscription();
-  const {
-    isAvailable,
-    loading: iapLoading,
-    purchasing,
-    restoring,
-    error: iapError,
-    monthlyProduct,
-    annualProduct,
-    purchase,
-    restore,
-  } = useIAP();
-
   const [selectedPlan, setSelectedPlan] = useState<Plan>('annual');
   const [key, setKey] = useState('');
   const [activating, setActivating] = useState(false);
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [showKeyInput, setShowKeyInput] = useState(false);
 
-  // Derive display prices from StoreKit (fall back to hardcoded if not loaded yet)
-  const monthlyPrice = monthlyProduct?.price ?? '$9.99';
-  const annualPrice = annualProduct?.price ?? '$59.99';
-
   const handleGetPro = async () => {
-    if (!isAvailable) {
-      Alert.alert(
-        'IAP not available in Expo Go',
-        'In-app purchases require a dev build or production build. Please use a dev build to test purchases.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    const productId: ProductId =
-      selectedPlan === 'annual' ? PRODUCT_IDS.annual : PRODUCT_IDS.monthly;
-
+    setLoadingCheckout(true);
     try {
-      await purchase(productId);
-      // Purchase result is async — listener in iap-store will update subscription state
+      const priceId = selectedPlan === 'annual' ? ANNUAL_PRICE_ID : MONTHLY_PRICE_ID;
+      const res = await fetch(`${API_URL}/api/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId }),
+      });
+      if (!res.ok) throw new Error('Failed to create checkout session');
+      const data = await res.json();
+      if (data.url) {
+        await Linking.openURL(data.url);
+      } else {
+        throw new Error('No checkout URL returned');
+      }
     } catch {
-      Alert.alert(
-        'Purchase failed',
-        'Something went wrong with your purchase. Please try again or contact support.',
-        [{ text: 'OK' }]
-      );
-    }
-  };
-
-  const handleRestorePurchases = async () => {
-    if (!isAvailable) {
-      Alert.alert(
-        'IAP not available in Expo Go',
-        'Restore purchases requires a dev build or production build.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    const restored = await restore();
-    if (restored) {
-      Alert.alert('Purchases Restored', 'Welcome back to Pro! All features are now unlocked.');
-    } else if (!iapError) {
-      Alert.alert(
-        'No Purchases Found',
-        'We couldn\'t find any previous purchases for this Apple ID. If you believe this is an error, please contact support.'
-      );
-    } else {
-      Alert.alert(
-        'Restore Failed',
-        'We couldn\'t restore your purchases. Please check your internet connection and try again.'
-      );
+      await Linking.openURL(`${API_URL}?plan=${selectedPlan}`);
+    } finally {
+      setLoadingCheckout(false);
     }
   };
 
@@ -107,34 +66,15 @@ export default function PaywallScreen() {
     if (ok) {
       Alert.alert('Welcome to Pro!', 'All features are now unlocked.');
     } else {
-      Alert.alert(
-        'Invalid key',
-        'This license key could not be verified. Please check the key and try again, or visit therapybinder.app for support.'
-      );
+      Alert.alert('Invalid key', 'This license key could not be verified. Please check the key and try again, or visit therapybinder.app for support.');
     }
   };
 
   const handleDeactivate = () => {
     Alert.alert('Deactivate Pro?', 'You will lose access to Pro features.', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Deactivate',
-        style: 'destructive',
-        onPress: async () => {
-          await deactivateLicense();
-        },
-      },
+      { text: 'Deactivate', style: 'destructive', onPress: async () => { await deactivateLicense(); } },
     ]);
-  };
-
-  // Determine CTA button label with real prices
-  const getCtaLabel = () => {
-    if (purchasing) return 'Processing...';
-    if (iapLoading) return 'Loading prices...';
-    if (selectedPlan === 'annual') {
-      return `Get Pro — ${annualPrice}/yr`;
-    }
-    return `Get Pro — ${monthlyPrice}/mo`;
   };
 
   return (
@@ -143,16 +83,11 @@ export default function PaywallScreen() {
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
-      <Text style={styles.title}>
-        {isPro ? 'Pro — Active' : 'Upgrade to Pro'}
-      </Text>
+      <Text style={styles.title}>{isPro ? 'Pro — Active' : 'Upgrade to Pro'}</Text>
       <Text style={styles.subtitle}>
-        {isPro
-          ? 'You have full access to all features.'
-          : 'Private, encrypted journaling — unlimited.'}
+        {isPro ? 'You have full access to all features.' : 'Private, encrypted journaling — unlimited.'}
       </Text>
 
-      {/* Features */}
       <View style={styles.featureList}>
         {FEATURES.map((f) => (
           <View key={f.label} style={styles.featureRow}>
@@ -168,46 +103,24 @@ export default function PaywallScreen() {
 
       {!isPro && (
         <>
-          {/* Expo Go dev notice */}
-          {!isAvailable && (
-            <View style={styles.devNotice}>
-              <Text style={styles.devNoticeText}>
-                ⚠️ IAP not available in Expo Go — use a dev build to test purchases
-              </Text>
-            </View>
-          )}
-
-          {/* Pricing toggle */}
           <View style={styles.pricingRow}>
-            {/* Monthly card */}
             <TouchableOpacity
               style={[styles.priceCard, selectedPlan === 'monthly' && styles.priceCardSelected]}
               onPress={() => setSelectedPlan('monthly')}
             >
-              {iapLoading ? (
-                <ActivityIndicator size="small" color={Colors.earthBrown} style={{ marginVertical: 6 }} />
-              ) : (
-                <Text style={styles.priceAmount}>{monthlyPrice}</Text>
-              )}
+              <Text style={styles.priceAmount}>$9.99</Text>
               <Text style={styles.pricePeriod}>per month</Text>
             </TouchableOpacity>
-
-            {/* Annual card */}
             <TouchableOpacity
               style={[styles.priceCard, selectedPlan === 'annual' && styles.priceCardSelected]}
               onPress={() => setSelectedPlan('annual')}
             >
-              {iapLoading ? (
-                <ActivityIndicator size="small" color={Colors.earthBrown} style={{ marginVertical: 6 }} />
-              ) : (
-                <Text style={styles.priceAmount}>{annualPrice}</Text>
-              )}
+              <Text style={styles.priceAmount}>$59.99</Text>
               <Text style={styles.pricePeriod}>per year</Text>
               <Text style={styles.saveBadge}>Save 50% ✦</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Testimonials */}
           <View style={styles.testimonialsSection}>
             <Text style={styles.testimonialsTitle}>What users are saying</Text>
             {[
@@ -222,52 +135,25 @@ export default function PaywallScreen() {
             ))}
           </View>
 
-          {/* Privacy line */}
           <View style={styles.privacyLine}>
             <Text style={styles.privacyLineText}>🔒 100% private — we never see your sessions</Text>
           </View>
 
-          {/* Primary CTA — StoreKit purchase */}
           <TouchableOpacity
-            style={[styles.getProBtn, (purchasing || iapLoading) && styles.btnDim]}
+            style={[styles.getProBtn, loadingCheckout && styles.btnDim]}
             onPress={handleGetPro}
-            disabled={purchasing || iapLoading}
+            disabled={loadingCheckout}
           >
-            {purchasing ? (
-              <View style={styles.btnLoadingRow}>
-                <ActivityIndicator size="small" color={Colors.white} />
-                <Text style={[styles.getProBtnText, { marginLeft: 8 }]}>Processing...</Text>
-              </View>
-            ) : (
-              <Text style={styles.getProBtnText}>{getCtaLabel()}</Text>
-            )}
+            <Text style={styles.getProBtnText}>
+              {loadingCheckout ? 'Opening checkout...' : selectedPlan === 'annual' ? 'Get Pro — $59.99/yr' : 'Get Pro — $9.99/mo'}
+            </Text>
           </TouchableOpacity>
 
           <Text style={styles.checkoutNote}>
-            Payment processed securely by Apple. Subscriptions auto-renew unless cancelled.
+            You'll be taken to a secure checkout. After payment, you'll receive a license key by email.
           </Text>
 
-          {/* Restore Purchases */}
-          <TouchableOpacity
-            style={[styles.restoreBtn, restoring && styles.btnDim]}
-            onPress={handleRestorePurchases}
-            disabled={restoring}
-          >
-            {restoring ? (
-              <View style={styles.btnLoadingRow}>
-                <ActivityIndicator size="small" color={Colors.earthBrown} />
-                <Text style={[styles.restoreBtnText, { marginLeft: 6 }]}>Restoring...</Text>
-              </View>
-            ) : (
-              <Text style={styles.restoreBtnText}>Restore Purchases</Text>
-            )}
-          </TouchableOpacity>
-
-          {/* Already have a license key (web purchase) */}
-          <TouchableOpacity
-            style={styles.alreadyHaveKeyBtn}
-            onPress={() => setShowKeyInput((v) => !v)}
-          >
+          <TouchableOpacity style={styles.alreadyHaveKeyBtn} onPress={() => setShowKeyInput((v) => !v)}>
             <Text style={styles.alreadyHaveKeyText}>
               {showKeyInput ? 'Hide key input ▲' : 'Already have a license key? ▼'}
             </Text>
@@ -275,9 +161,6 @@ export default function PaywallScreen() {
 
           {showKeyInput && (
             <View style={styles.licenseSection}>
-              <Text style={styles.licenseNote}>
-                For users who purchased via therapybinder.app — enter your license key below.
-              </Text>
               <TextInput
                 style={styles.licenseInput}
                 value={key}
@@ -292,9 +175,7 @@ export default function PaywallScreen() {
                 onPress={handleActivate}
                 disabled={!key.trim() || activating}
               >
-                <Text style={styles.activateBtnText}>
-                  {activating ? 'Activating...' : 'Activate Key'}
-                </Text>
+                <Text style={styles.activateBtnText}>{activating ? 'Activating...' : 'Activate Key'}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -316,102 +197,44 @@ const styles = StyleSheet.create({
   backBtn: { marginBottom: 16 },
   back: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.earthBrown },
   title: { fontFamily: Fonts.serifBold, fontSize: FontSizes.xxl, color: Colors.earthBrown },
-  subtitle: {
-    fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.barkBrown, marginTop: 4, marginBottom: 24,
-  },
-
+  subtitle: { fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.barkBrown, marginTop: 4, marginBottom: 24 },
   featureList: { gap: 16, marginBottom: 28 },
   featureRow: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white,
     borderRadius: 14, padding: 16, gap: 14,
-    shadowColor: Colors.earthBrown, shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+    shadowColor: Colors.earthBrown, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   featureIcon: { fontSize: 24, width: 36, textAlign: 'center' },
   featureText: { flex: 1 },
   featureLabel: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.earthBrown },
   featureDesc: { fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.barkBrown, marginTop: 2 },
   checkmark: { fontFamily: Fonts.sansBold, fontSize: FontSizes.lg, color: Colors.sage },
-
-  devNotice: {
-    backgroundColor: '#FFF3CD', borderRadius: 10, padding: 12, marginBottom: 16,
-    borderWidth: 1, borderColor: '#FBBF24',
-  },
-  devNoticeText: {
-    fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: '#92400E', textAlign: 'center',
-  },
-
   pricingRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  priceCard: {
-    flex: 1, backgroundColor: Colors.white, borderRadius: 14, padding: 16, alignItems: 'center',
-    borderWidth: 1.5, borderColor: Colors.border,
-  },
+  priceCard: { flex: 1, backgroundColor: Colors.white, borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1.5, borderColor: Colors.border },
   priceCardSelected: { borderColor: Colors.earthBrown, borderWidth: 2 },
   priceAmount: { fontFamily: Fonts.serifBold, fontSize: FontSizes.xl, color: Colors.earthBrown },
   pricePeriod: { fontFamily: Fonts.sans, fontSize: FontSizes.sm, color: Colors.barkBrown, marginTop: 2 },
-  saveBadge: {
-    fontFamily: Fonts.sansBold, fontSize: FontSizes.xs, color: Colors.sage, marginTop: 6,
-  },
-
+  saveBadge: { fontFamily: Fonts.sansBold, fontSize: FontSizes.xs, color: Colors.sage, marginTop: 6 },
   testimonialsSection: { marginBottom: 20, gap: 10 },
-  testimonialsTitle: {
-    fontFamily: Fonts.sansBold, fontSize: FontSizes.sm, color: Colors.earthBrown,
-    marginBottom: 4, letterSpacing: 0.3,
-  },
-  testimonialCard: {
-    backgroundColor: Colors.white, borderRadius: 12, padding: 14, gap: 4,
-    borderWidth: 1, borderColor: Colors.border,
-    shadowColor: Colors.earthBrown, shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
-  },
-  testimonialText: {
-    fontFamily: Fonts.serif, fontSize: FontSizes.md, color: Colors.earthBrown,
-    lineHeight: 22, fontStyle: 'italic',
-  },
+  testimonialsTitle: { fontFamily: Fonts.sansBold, fontSize: FontSizes.sm, color: Colors.earthBrown, marginBottom: 4, letterSpacing: 0.3 },
+  testimonialCard: { backgroundColor: Colors.white, borderRadius: 12, padding: 14, gap: 4, borderWidth: 1, borderColor: Colors.border },
+  testimonialText: { fontFamily: Fonts.serif, fontSize: FontSizes.md, color: Colors.earthBrown, lineHeight: 22, fontStyle: 'italic' },
   testimonialName: { fontFamily: Fonts.sansMedium, fontSize: FontSizes.xs, color: Colors.barkBrown, marginTop: 2 },
-
   privacyLine: { alignItems: 'center', marginBottom: 16 },
   privacyLineText: { fontFamily: Fonts.sansMedium, fontSize: FontSizes.sm, color: Colors.sage, textAlign: 'center' },
-
   getProBtn: {
-    backgroundColor: Colors.earthBrown, paddingVertical: 18, borderRadius: 30,
-    alignItems: 'center', marginBottom: 10,
-    shadowColor: Colors.earthBrown, shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2, shadowRadius: 8, elevation: 3,
+    backgroundColor: Colors.earthBrown, paddingVertical: 18, borderRadius: 30, alignItems: 'center', marginBottom: 10,
+    shadowColor: Colors.earthBrown, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 3,
   },
   getProBtnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white, letterSpacing: 0.3 },
-  btnLoadingRow: { flexDirection: 'row', alignItems: 'center' },
-
-  checkoutNote: {
-    fontFamily: Fonts.sans, fontSize: FontSizes.xs, color: Colors.barkBrown,
-    textAlign: 'center', lineHeight: 18, marginBottom: 12, paddingHorizontal: 10,
-  },
-
-  restoreBtn: { alignItems: 'center', paddingVertical: 12, marginBottom: 16 },
-  restoreBtnText: {
-    fontFamily: Fonts.sansMedium, fontSize: FontSizes.sm, color: Colors.earthBrown,
-    textDecorationLine: 'underline',
-  },
-
+  checkoutNote: { fontFamily: Fonts.sans, fontSize: FontSizes.xs, color: Colors.barkBrown, textAlign: 'center', lineHeight: 18, marginBottom: 20, paddingHorizontal: 10 },
   alreadyHaveKeyBtn: { alignItems: 'center', marginBottom: 12 },
-  alreadyHaveKeyText: { fontFamily: Fonts.sansMedium, fontSize: FontSizes.sm, color: Colors.barkBrown },
-
+  alreadyHaveKeyText: { fontFamily: Fonts.sansMedium, fontSize: FontSizes.sm, color: Colors.earthBrown },
   licenseSection: { gap: 12, marginTop: 4 },
-  licenseNote: {
-    fontFamily: Fonts.sans, fontSize: FontSizes.xs, color: Colors.barkBrown,
-    textAlign: 'center', lineHeight: 18,
-  },
-  licenseInput: {
-    backgroundColor: Colors.white, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
-    fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.earthBrown,
-    borderWidth: 1, borderColor: Colors.border,
-  },
-  activateBtn: {
-    backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 30, alignItems: 'center',
-  },
+  licenseInput: { backgroundColor: Colors.white, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontFamily: Fonts.sans, fontSize: FontSizes.md, color: Colors.earthBrown, borderWidth: 1, borderColor: Colors.border },
+  activateBtn: { backgroundColor: Colors.earthBrown, paddingVertical: 16, borderRadius: 30, alignItems: 'center' },
   activateBtnText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.white },
   btnDim: { opacity: 0.5 },
-
   deactivateBtn: { alignItems: 'center', paddingVertical: 16, marginTop: 20 },
   deactivateText: { fontFamily: Fonts.sansBold, fontSize: FontSizes.md, color: Colors.terracotta },
 });

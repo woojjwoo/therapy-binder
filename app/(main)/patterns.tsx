@@ -30,7 +30,7 @@ import { useEntitlement } from '../../src/hooks/useEntitlement';
 import type { Block } from '../../src/models/block';
 import { SCREENSHOT_SEED_CARDS } from '../../src/stores/session-store';
 
-const SCREENSHOT_MODE = true;
+const SCREENSHOT_MODE = false;
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 
 interface SessionData {

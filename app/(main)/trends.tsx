@@ -29,7 +29,7 @@ import { UpgradeModal } from '../../src/components/UpgradeModal';
 import { ErrorBoundary } from '../../src/components/ErrorBoundary';
 import { SCREENSHOT_SEED_CARDS } from '../../src/stores/session-store';
 
-const SCREENSHOT_MODE = true;
+const SCREENSHOT_MODE = false;
 
 interface MoodPoint {
   id: string;
