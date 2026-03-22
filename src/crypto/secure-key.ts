@@ -141,3 +141,16 @@ export async function unlockWithBiometrics(prompt: string): Promise<CryptoKey | 
 export async function storePassphraseSecurely(passphrase: string): Promise<void> {
   await secureSet(PASSPHRASE_KEY, passphrase);
 }
+
+/**
+ * Clear all keys from SecureStore (used during full app reset).
+ */
+export async function clearSecureKeys(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(RAW_KEY_HEX_KEY);
+  } catch { /* ignore */ }
+  try {
+    await SecureStore.deleteItemAsync(PASSPHRASE_KEY);
+  } catch { /* ignore */ }
+  memoryStore.clear();
+}

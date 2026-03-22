@@ -175,6 +175,7 @@ function ChangePassphraseModal({
 
 function SettingsScreenInner() {
   const lock = useAuthStore((s) => s.lock);
+  const resetApp = useAuthStore((s) => s.resetApp);
   const masterKey = useAuthStore((s) => s.masterKey);
   const removeAll = useSessionStore((s) => s.removeAll);
   const { isPro, canExportPDF, sessionCount } = useEntitlement();
@@ -523,6 +524,28 @@ function SettingsScreenInner() {
           <TouchableOpacity style={styles.dangerRow} onPress={handleDeleteAll}>
             <Ionicons name="trash-outline" size={18} color={Colors.terracotta} style={{ marginRight: 8 }} />
             <Text style={styles.dangerText}>Delete All Data</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dangerRow}
+            onPress={() => {
+              Alert.alert(
+                'Reset App',
+                'This will erase all data, encryption keys, and return to the welcome screen. This cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Reset Everything',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await resetApp();
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            <Ionicons name="refresh-outline" size={18} color={Colors.terracotta} style={{ marginRight: 8 }} />
+            <Text style={styles.dangerText}>Reset App</Text>
           </TouchableOpacity>
         </View>
 

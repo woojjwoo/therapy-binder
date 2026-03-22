@@ -137,6 +137,11 @@ export async function deleteAllSessions(): Promise<void> {
   await db.runAsync('DELETE FROM sessions_fts');
 }
 
+export async function deleteAllMetadata(): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM metadata');
+}
+
 // ─── FTS Search ──────────────────────────────────────────────────────────────
 
 export async function searchSessionsFts(query: string): Promise<string[]> {

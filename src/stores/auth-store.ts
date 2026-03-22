@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { getMeta, setMeta } from '../db';
+import { getMeta, setMeta, deleteAllSessions, deleteAllMetadata } from '../db';
 import { METADATA_KEYS } from '../db/schema';
 import type { CryptoKey } from '../crypto/aes-gcm';
 
@@ -26,6 +26,7 @@ interface AuthState {
   setOnboarding: (data: OnboardingData) => void;
   completeOnboarding: (saltHex: string) => Promise<void>;
   loadMeta: () => Promise<void>;
+  resetApp: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -68,5 +69,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch {
       set({ onboardingComplete: false, metaLoaded: true });
     }
+  },
+
+  resetApp: async () => {
+    const { clearSecureKeys } = await import('../crypto/secure-key');
+    await deleteAllSessions();
+    await deleteAllMetadata();
+    await clearSecureKeys();
+    set({
+      masterKey: null,
+      isUnlocked: false,
+      onboarding: null,
+      onboardingComplete: false,
+    });
   },
 }));
