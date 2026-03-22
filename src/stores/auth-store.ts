@@ -73,9 +73,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   resetApp: async () => {
     const { clearSecureKeys } = await import('../crypto/secure-key');
+    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+    const { useSessionStore } = await import('./session-store');
     await deleteAllSessions();
     await deleteAllMetadata();
     await clearSecureKeys();
+    await AsyncStorage.clear();
+    useSessionStore.setState({ cards: [], currentSession: null, searchResults: null });
     set({
       masterKey: null,
       isUnlocked: false,
