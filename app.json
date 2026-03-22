@@ -62,6 +62,13 @@
         }
       ],
       "./modules/privacy-screen/plugin/build"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d912ba23-1f38-4b13-abb6-c1b86d83ea2f"
+      }
+    },
+    "owner": "woojjwoo"
   }
 }
