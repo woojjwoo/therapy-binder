@@ -60,8 +60,7 @@
             "deploymentTarget": "16.0"
           }
         }
-      ],
-      "./modules/privacy-screen/plugin/build"
+      ]
     ],
     "extra": {
       "router": {},
