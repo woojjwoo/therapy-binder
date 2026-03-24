@@ -5,18 +5,7 @@
 
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-// Lazy-required — react-native-html-to-pdf is a native module that
-// crashes Expo Go at register time. Import only when actually calling exportAsPDF.
-// In a dev/prod native build this resolves correctly.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _RNHTMLtoPDF: any = null;
-function getRNHTMLtoPDF() {
-  if (!_RNHTMLtoPDF) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    _RNHTMLtoPDF = require('react-native-html-to-pdf').default ?? require('react-native-html-to-pdf');
-  }
-  return _RNHTMLtoPDF;
-}
+// react-native-html-to-pdf removed — PDF export not available in this build
 import { listSessions, decryptSession } from './local';
 import type { CryptoKey } from '../crypto/aes-gcm';
 import { moodColor } from '../theme/colors';
@@ -157,17 +146,7 @@ function buildHTML(sessions: ExportSession[]): string {
     </html>`;
 }
 
-export async function exportAsPDF(masterKey: CryptoKey): Promise<void> {
-  const sessions = await decryptAll(masterKey);
-  const html = buildHTML(sessions);
-
-  const result = await getRNHTMLtoPDF().convert({
-    html,
-    fileName: `therapy-binder-transition-${Date.now()}`,
-    base64: false,
-  });
-
-  if (result.filePath && (await Sharing.isAvailableAsync())) {
-    await Sharing.shareAsync(result.filePath, { mimeType: 'application/pdf' });
-  }
+export async function exportAsPDF(_masterKey: CryptoKey): Promise<void> {
+  // PDF export temporarily unavailable — react-native-html-to-pdf removed
+  throw new Error('PDF export is not available in this build.');
 }
